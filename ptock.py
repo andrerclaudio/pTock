@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Built-in libraries
 import logging
 import curses
 from enum import Enum
@@ -37,7 +36,6 @@ class ScreenConnector:
     def __init__(self, color: PixelColor = PixelColor.GREEN) -> None:
         self.stdscr: curses.window = None
         self.color = color.value  # Store the integer value of the color enum
-        self.x = 0
 
     def draw_pixel(self, x: int = 0, y: int = 0) -> None:
         """Draw a pixel at the specified (x, y) coordinates."""
@@ -56,73 +54,70 @@ class ScreenConnector:
             )
 
     def mount_screen(self) -> None:
-        """Draw the initial pixel and refresh the screen."""
-        self.draw_pixel(self.x, self.x)
-        self.x += 1
-        self.stdscr.refresh()  # Update the screen after all drawing operations
+        """Draw a pixel and refresh the screen."""
+        self.draw_pixel(0, 0)
+        self.stdscr.refresh()
 
     def update(self, timestamp: int) -> None:
-        """ """
-        # Call the mount_screen method to handle pixel drawing without clearing the screen
+        """Update screen by drawing a pixel without clearing previous content."""
         self.mount_screen()
 
     def application(self, stdscr: curses.window) -> None:
         """Main application logic."""
-        self.stdscr = stdscr  # Update stdscr attribute for use in other methods
-        self.colors_init()  # Initialize colors for curses
-        curses.curs_set(0)  # Hide the cursor for better visual presentation
-        self.mount_screen()  # Mount the screen and draw the pixel
-        self.clock = Engine(self.update)  # Start the clock to beat
-        self.stdscr.getch()  # Wait for user input to exit
-        self.clock.unlock()  # Unlock the thread
-        self.stdscr.clear()  # Clear the screen to remove artifacts
+        self.stdscr = stdscr
+        self.colors_init()
+        curses.curs_set(0)
+        self.mount_screen()
+        self.clock = Engine(self.update)
+        self.stdscr.getch()
+        self.stdscr.clear()
+        self.clock.stop()
 
     def run(self) -> None:
         """Run the curses application."""
-        curses.wrapper(self.application)  # Start the application with curses wrapper
+        try:
+            curses.wrapper(self.application)
+        except curses.error as e:
+            logger.error(f"Curses error occurred: {e}")
+            sys.exit(1)
 
 
 class Engine(threading.Thread):
     """ """
 
     def __init__(self, update: ScreenConnector.update) -> None:
-        """ """
-        super().__init__(name="Beating heart")
 
-        # The update object that will be used to update the screen
+        super().__init__(name="Clock beat", daemon=True)
+
         self.update = update
-        # Control flag for the Clock loop
-        self.__lock: bool = True
-        # Start the thread immediately after initialization
+        self.__stop_event = threading.Event()
         self.start()
 
     def run(self) -> None:
         """ """
-        try:
 
-            while self.__lock:
-                # Get the current date and time
+        try:
+            # Initialize the thread fetching timestamps from the system clock
+            while not self.__stop_event.is_set():
+
                 now = datetime.now()
-                # Convert to timestamp
                 timestamp = int(now.timestamp())
                 self.update(timestamp)
                 sleep(1)
 
-            logging.info("Stopped the clock.")
+            logger.info("Screen update thread stopped.")
 
         except threading.ThreadError as e:
             logging.error(f"An error occurred during the thread operation: {e}")
             sys.exit(1)
 
-    def unlock(self) -> None:
-        """
-        Stop the loop by setting the __lock attribute to False.
-        """
-        self.__lock = False
+    def stop(self) -> None:
+        """ """
+        self.__stop_event.set()
 
 
 def ptock() -> None:
-    """Entry point of the application."""
+    """ """
     screen = ScreenConnector()
     screen.run()
 
