@@ -5,6 +5,9 @@
 import logging
 import curses
 from enum import Enum
+from datetime import datetime
+import threading
+from time import sleep
 
 
 # Configure logging
@@ -34,6 +37,7 @@ class ScreenConnector:
     def __init__(self, color: PixelColor = PixelColor.GREEN) -> None:
         self.stdscr: curses.window = None
         self.color = color.value  # Store the integer value of the color enum
+        self.x = 0
 
     def draw_pixel(self, x: int = 0, y: int = 0) -> None:
         """Draw a pixel at the specified (x, y) coordinates."""
@@ -53,8 +57,14 @@ class ScreenConnector:
 
     def mount_screen(self) -> None:
         """Draw the initial pixel and refresh the screen."""
-        self.draw_pixel(0, 0)  # Draw the pixel at (0, 0)
+        self.draw_pixel(self.x, self.x)
+        self.x += 1
         self.stdscr.refresh()  # Update the screen after all drawing operations
+
+    def update(self, timestamp: int) -> None:
+        """ """
+        # Call the mount_screen method to handle pixel drawing without clearing the screen
+        self.mount_screen()
 
     def application(self, stdscr: curses.window) -> None:
         """Main application logic."""
@@ -62,9 +72,9 @@ class ScreenConnector:
         self.colors_init()  # Initialize colors for curses
         curses.curs_set(0)  # Hide the cursor for better visual presentation
         self.mount_screen()  # Mount the screen and draw the pixel
-
-        # Wait for user input to exit
-        self.stdscr.getch()
+        self.clock = Engine(self.update)  # Start the clock to beat
+        self.stdscr.getch()  # Wait for user input to exit
+        self.clock.unlock()  # Unlock the thread
         self.stdscr.clear()  # Clear the screen to remove artifacts
 
     def run(self) -> None:
@@ -72,10 +82,49 @@ class ScreenConnector:
         curses.wrapper(self.application)  # Start the application with curses wrapper
 
 
+class Engine(threading.Thread):
+    """ """
+
+    def __init__(self, update: ScreenConnector.update) -> None:
+        """ """
+        super().__init__(name="Beating heart")
+
+        # The update object that will be used to update the screen
+        self.update = update
+        # Control flag for the Clock loop
+        self.__lock: bool = True
+        # Start the thread immediately after initialization
+        self.start()
+
+    def run(self) -> None:
+        """ """
+        try:
+
+            while self.__lock:
+                # Get the current date and time
+                now = datetime.now()
+                # Convert to timestamp
+                timestamp = int(now.timestamp())
+                self.update(timestamp)
+                sleep(1)
+
+            logging.info("Stopped the clock.")
+
+        except threading.ThreadError as e:
+            logging.error(f"An error occurred during the thread operation: {e}")
+            sys.exit(1)
+
+    def unlock(self) -> None:
+        """
+        Stop the loop by setting the __lock attribute to False.
+        """
+        self.__lock = False
+
+
 def ptock() -> None:
     """Entry point of the application."""
-    cursor = ScreenConnector()
-    cursor.run()  # Start the application
+    screen = ScreenConnector()
+    screen.run()
 
 
 if __name__ == "__main__":
