@@ -21,13 +21,13 @@ class Quartz(threading.Thread):
     """
 
     def __init__(
-        self, update: Callable[[int], None], tz: Optional[ZoneInfo] = None
+        self, update: Callable[[datetime], None], tz: Optional[ZoneInfo] = None
     ) -> None:
         """
         Initialize the Quartz thread.
 
         Args:
-            update (Callable[[int], None]): Function to call with the Unix timestamp to update the screen.
+            update (Callable[[datetime], None]): Function to call with datetime object to update the screen.
             tz (Optional[ZoneInfo]): Timezone to use for timestamps. Defaults to the local timezone.
         """
         super().__init__(name="QuartzClock", daemon=True)
@@ -48,8 +48,7 @@ class Quartz(threading.Thread):
             while not self.__stop_event.wait(timeout=1):
 
                 now = datetime.now(tz=self.tz_info)
-                timestamp = int(now.timestamp())
-                self.update(timestamp)
+                self.update(now)
 
             logger.info("Screen update thread stopped.")
 

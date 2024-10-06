@@ -5,6 +5,7 @@ import curses
 from enum import Enum
 from zoneinfo import ZoneInfo
 import sys
+from datetime import datetime
 
 # Custom-made libraries
 #
@@ -37,7 +38,7 @@ class ViewConnector:
         self.tz_info = tz
         self.color = color.value  # Store the integer value of the color enum
 
-    def draw_pixel(self, x: int = 0, y: int = 0) -> None:
+    def __draw_pixel(self, x: int = 0, y: int = 0) -> None:
         """Draw a pixel at the specified (x, y) coordinates."""
         color_pair = curses.color_pair(self.color)
         try:
@@ -46,7 +47,7 @@ class ViewConnector:
             logger.error(f"Error drawing pixel at ({x}, {y}): {e}", exc_info=False)
 
     @staticmethod
-    def colors_init() -> None:
+    def __colors_init() -> None:
         """Initialize the color system for use in the terminal."""
         curses.initscr()  # Initialize the curses mode
         curses.start_color()  # Enable color functionality
@@ -57,31 +58,31 @@ class ViewConnector:
                 color.value, getattr(curses, f"COLOR_{color.name}"), curses.COLOR_BLACK
             )
 
-    def mount_screen(self) -> None:
+    def __interpolate(self) -> None:
         """Draw a pixel and refresh the screen."""
-        self.draw_pixel(0, 0)
+        self.__draw_pixel(0, 0)
         self.stdscr.refresh()
 
-    def update(self, timestamp: int) -> None:
-        """Update screen by drawing a pixel without clearing previous content."""
-        self.mount_screen()
-
-    def application(self, stdscr: curses.window) -> None:
+    def __application(self, stdscr: curses.window) -> None:
         """Main application logic."""
         self.stdscr = stdscr
-        self.colors_init()
+        self.__colors_init()
         curses.curs_set(0)
-        self.mount_screen()
+        self.__interpolate()
         self.clock = Quartz(self.update, tz=self.tz_info)
         self.stdscr.getch()
         self.stdscr.clear()
         self.clock.stop()
 
+    def update(self, now: datetime) -> None:
+        """Update screen by drawing a pixel without clearing previous content."""
+        self.__interpolate()
+
     def run(self) -> None:
         """Run the curses application."""
 
         try:
-            curses.wrapper(self.application)
+            curses.wrapper(self.__application)
 
         except curses.error as e:
             logger.error(f"Curses error occurred: {e}")
