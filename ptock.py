@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 # Custom-made libraries
 #
-from ptock_display import ScreenConnector
+from view import ViewConnector
 
 # Configure logging
 logging.basicConfig(
@@ -21,8 +21,8 @@ logger = logging.getLogger(__name__)
 def ptock() -> None:
     """ """
     tz = ZoneInfo("America/Argentina/Buenos_Aires")  # Set to Buenos  Aires, Argentina.
-    screen = ScreenConnector(tz=tz)
-    screen.run()
+    clock = ViewConnector(tz=tz)
+    clock.run()
 
 
 if __name__ == "__main__":

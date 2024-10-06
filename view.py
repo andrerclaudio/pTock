@@ -8,7 +8,7 @@ import sys
 
 # Custom-made libraries
 #
-from ptock_time import TimeBeat
+from mechanism import Quartz
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class PixelColor(Enum):
     YELLOW = 8
 
 
-class ScreenConnector:
+class ViewConnector:
     """Class to manage screen operations using curses."""
 
     def __init__(
@@ -69,7 +69,7 @@ class ScreenConnector:
         self.colors_init()
         curses.curs_set(0)
         self.mount_screen()
-        self.clock = TimeBeat(self.update, tz=self.tz_info)
+        self.clock = Quartz(self.update, tz=self.tz_info)
         self.stdscr.getch()
         self.stdscr.clear()
         self.clock.stop()
