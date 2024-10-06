@@ -40,7 +40,10 @@ class ViewConnector:
     def draw_pixel(self, x: int = 0, y: int = 0) -> None:
         """Draw a pixel at the specified (x, y) coordinates."""
         color_pair = curses.color_pair(self.color)
-        self.stdscr.addch(y, x, "█", color_pair)
+        try:
+            self.stdscr.addch(y, x, "█", color_pair)
+        except curses.error as e:
+            logger.error(f"Error drawing pixel at ({x}, {y}): {e}", exc_info=False)
 
     @staticmethod
     def colors_init() -> None:
