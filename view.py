@@ -6,6 +6,7 @@ from enum import Enum
 from zoneinfo import ZoneInfo
 import sys
 from datetime import datetime
+from font import DIGIT, COLON
 
 # Custom-made libraries
 #
@@ -36,6 +37,7 @@ class ViewConnector:
         self.clock = None
         self.stdscr: curses.window = None
         self.tz_info = tz
+        self.last_mapped: list = map_to_symbols([0, 0, ":", 0, 0, ":", 0, 0])
         self.color = color.value  # Store the integer value of the color enum
 
     def __draw_pixel(self, x: int = 0, y: int = 0) -> None:
@@ -58,8 +60,8 @@ class ViewConnector:
                 color.value, getattr(curses, f"COLOR_{color.name}"), curses.COLOR_BLACK
             )
 
-    def __interpolate(self) -> None:
-        """Draw a pixel and refresh the screen."""
+    def __interpolate(self, n_mapped: list) -> None:
+        """ """
         self.__draw_pixel(0, 0)
         self.stdscr.refresh()
 
@@ -68,15 +70,18 @@ class ViewConnector:
         self.stdscr = stdscr
         self.__colors_init()
         curses.curs_set(0)
-        self.__interpolate()
         self.clock = Quartz(self.update, tz=self.tz_info)
+
         self.stdscr.getch()
         self.stdscr.clear()
         self.clock.stop()
 
     def update(self, now: datetime) -> None:
         """Update screen by drawing a pixel without clearing previous content."""
-        self.__interpolate()
+
+        numbers_expanded: list = datetime_break(now)
+        numbers_mapped: list = map_to_symbols(numbers_expanded)
+        self.__interpolate(numbers_mapped)
 
     def run(self) -> None:
         """Run the curses application."""
@@ -87,3 +92,55 @@ class ViewConnector:
         except curses.error as e:
             logger.error(f"Curses error occurred: {e}")
             sys.exit(1)
+
+
+def datetime_break(now: datetime) -> list:
+    """ """
+    seconds = now.second
+    minutes = now.minute
+    hours = now.hour
+
+    hour_dec, hour_unit = divmod(hours, 10)
+    min_dec, min_unit = divmod(minutes, 10)
+    sec_dec, sec_unit = divmod(seconds, 10)
+
+    return [hour_dec, hour_unit, ":", min_dec, min_unit, ":", sec_dec, sec_unit]
+
+
+def map_to_symbols(current_numbers: list) -> list:
+    """ """
+    pixel_buffer = []
+
+    number = DIGIT[current_numbers[0]]
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = DIGIT[current_numbers[1]]
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = COLON
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = DIGIT[current_numbers[3]]
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = DIGIT[current_numbers[4]]
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = COLON
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = DIGIT[current_numbers[6]]
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = DIGIT[current_numbers[7]]
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    return pixel_buffer
