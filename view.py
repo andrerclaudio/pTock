@@ -6,7 +6,7 @@ from enum import Enum
 from zoneinfo import ZoneInfo
 import sys
 from datetime import datetime
-from font import DIGIT, COLON
+from font import DIGIT, COLON, H, W
 
 # Custom-made libraries
 #
@@ -32,7 +32,7 @@ class ViewConnector:
     """Class to manage screen operations using curses."""
 
     def __init__(
-        self, tz: ZoneInfo = None, color: PixelColor = PixelColor.GREEN
+        self, tz: ZoneInfo = None, color: PixelColor = PixelColor.BLUE
     ) -> None:
         self.clock = None
         self.stdscr: curses.window = None
@@ -40,11 +40,14 @@ class ViewConnector:
         self.last_mapped: list = map_to_symbols([0, 0, ":", 0, 0, ":", 0, 0])
         self.color = color.value  # Store the integer value of the color enum
 
-    def __draw_pixel(self, x: int = 0, y: int = 0) -> None:
+    def __draw_pixel(self, pixel: str, x: int = 0, y: int = 0) -> None:
         """Draw a pixel at the specified (x, y) coordinates."""
         color_pair = curses.color_pair(self.color)
         try:
-            self.stdscr.addch(y, x, "█", color_pair)
+            if pixel == "1":
+                self.stdscr.addch(y, x, "█", color_pair)
+            else:
+                self.stdscr.addch(y, x, " ", color_pair)
         except curses.error as e:
             logger.error(f"Error drawing pixel at ({x}, {y}): {e}", exc_info=False)
 
@@ -62,8 +65,17 @@ class ViewConnector:
 
     def __interpolate(self, n_mapped: list) -> None:
         """ """
-        self.__draw_pixel(0, 0)
-        self.stdscr.refresh()
+
+        block = 0
+        for slice in n_mapped:
+            element: list = slice
+            element.pop(0)
+            for height in range(H):
+                for weight in range(W):
+                    x = (block * 4) + weight
+                    self.__draw_pixel(pixel=element.pop(0), x=x, y=height)
+            block += 1
+            self.stdscr.refresh()
 
     def __application(self, stdscr: curses.window) -> None:
         """Main application logic."""
@@ -79,9 +91,9 @@ class ViewConnector:
     def update(self, now: datetime) -> None:
         """Update screen by drawing a pixel without clearing previous content."""
 
-        numbers_expanded: list = datetime_break(now)
-        numbers_mapped: list = map_to_symbols(numbers_expanded)
-        self.__interpolate(numbers_mapped)
+        time_slices: list = datetime_slicer(now)
+        time_mapped: list = map_to_symbols(time_slices)
+        self.__interpolate(time_mapped)
 
     def run(self) -> None:
         """Run the curses application."""
@@ -94,7 +106,7 @@ class ViewConnector:
             sys.exit(1)
 
 
-def datetime_break(now: datetime) -> list:
+def datetime_slicer(now: datetime) -> list:
     """ """
     seconds = now.second
     minutes = now.minute
@@ -107,27 +119,15 @@ def datetime_break(now: datetime) -> list:
     return [hour_dec, hour_unit, ":", min_dec, min_unit, ":", sec_dec, sec_unit]
 
 
-def map_to_symbols(current_numbers: list) -> list:
+def map_to_symbols(elements: list) -> list:
     """ """
     pixel_buffer = []
 
-    number = DIGIT[current_numbers[0]]
+    number = DIGIT[elements[0]]
     binary_str = list(number)
     pixel_buffer.append(binary_str)
 
-    number = DIGIT[current_numbers[1]]
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
-
-    number = COLON
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
-
-    number = DIGIT[current_numbers[3]]
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
-
-    number = DIGIT[current_numbers[4]]
+    number = DIGIT[elements[1]]
     binary_str = list(number)
     pixel_buffer.append(binary_str)
 
@@ -135,11 +135,23 @@ def map_to_symbols(current_numbers: list) -> list:
     binary_str = list(number)
     pixel_buffer.append(binary_str)
 
-    number = DIGIT[current_numbers[6]]
+    number = DIGIT[elements[3]]
     binary_str = list(number)
     pixel_buffer.append(binary_str)
 
-    number = DIGIT[current_numbers[7]]
+    number = DIGIT[elements[4]]
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = COLON
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = DIGIT[elements[6]]
+    binary_str = list(number)
+    pixel_buffer.append(binary_str)
+
+    number = DIGIT[elements[7]]
     binary_str = list(number)
     pixel_buffer.append(binary_str)
 
