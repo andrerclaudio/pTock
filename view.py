@@ -75,7 +75,7 @@ class ViewConnector:
                     x = (block * 4) + weight
                     self.__draw_pixel(pixel=element.pop(0), x=x, y=height)
             block += 1
-            self.stdscr.refresh()
+        self.stdscr.refresh()
 
     def __application(self, stdscr: curses.window) -> None:
         """Main application logic."""
