@@ -36,20 +36,27 @@ class ViewConnector:
     ) -> None:
         self.clock = None
         self.stdscr: curses.window = None
-        self.tz_info = tz
+        self.tz_info: ZoneInfo = tz
         self.last_mapped: list = map_to_symbols([0, 0, ":", 0, 0, ":", 0, 0])
+        self.pixel_buffer: dict = {}
         self.color = color.value  # Store the integer value of the color enum
 
     def __draw_pixel(self, pixel: str, x: int = 0, y: int = 0) -> None:
         """Draw a pixel at the specified (x, y) coordinates."""
         color_pair = curses.color_pair(self.color)
-        try:
-            if pixel == "1":
-                self.stdscr.addch(y, x, "█", color_pair)
-            else:
-                self.stdscr.addch(y, x, " ", color_pair)
-        except curses.error as e:
-            logger.error(f"Error drawing pixel at ({x}, {y}): {e}", exc_info=False)
+        key = f"{x}{y}"
+
+        # Check if the pixel is already in the buffer and if it's the same
+        if key not in self.pixel_buffer or self.pixel_buffer[key] != pixel:
+            self.pixel_buffer[key] = pixel  # Save the pixel in the buffer
+            try:
+                # Use '█' for pixel '1' and space for others
+                char = "█" if pixel == "1" else " "
+                self.stdscr.addch(y, x, char, color_pair)
+            except curses.error as e:
+                # Remove the pixel from buffer if drawing fails
+                self.pixel_buffer.pop(key, None)
+                logger.error(f"Error drawing pixel at ({x}, {y}): {e}", exc_info=False)
 
     @staticmethod
     def __colors_init() -> None:
@@ -69,7 +76,6 @@ class ViewConnector:
         block = 0
         for slice in n_mapped:
             element: list = slice
-            element.pop(0)
             for height in range(H):
                 for weight in range(W):
                     x = (block * 4) + weight

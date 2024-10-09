@@ -1,7 +1,7 @@
-# All characters are stored in the lower 15 bits of u16 integers.
-# After the most significant dummy bit, the bitmaps are layed
-# out as 5x3 grids, starting from the top left and running across
-# in rows until the least significant bit at the bottom right.
+# All characters are stored in a 15 bits string variable each.
+# The bitmaps are layed out as 5x3 grids, starting from the
+# top left and running across in rows until the least significant
+# bit at the bottom right.
 
 # Height of a single character in bits.
 H: int = 5
@@ -15,7 +15,7 @@ W: int = 3
 # .x.
 # ...
 # Bitmap ':' character.
-COLON: str = "0000010000010000"
+COLON: str = "000010000010000"
 
 # ...
 # ...
@@ -56,59 +56,59 @@ DIGIT: str = [
     # x.x
     # x.x
     # xxx
-    "0111101101101111",
+    "111101101101111",
     # .x.
     # xx.
     # .x.
     # .x.
     # xxx
-    "0010110010010111",
+    "010110010010111",
     # xxx
     # ..x
     # xxx
     # x..
     # xxx
-    "0111001111100111",
+    "111001111100111",
     # xxx
     # ..x
     # xxx
     # ..x
     # xxx
-    "0111001111001111",
+    "111001111001111",
     # x.x
     # x.x
     # xxx
     # ..x
     # ..x
-    "0101101111001001",
+    "101101111001001",
     # xxx
     # x..
     # xxx
     # ..x
     # xxx
-    "0111100111001111",
+    "111100111001111",
     # xxx
     # x..
     # xxx
     # x.x
     # xxx
-    "0111100111101111",
+    "111100111101111",
     # xxx
     # ..x
     # ..x
     # ..x
     # ..x
-    "0111001001001001",
+    "111001001001001",
     # xxx
     # x.x
     # xxx
     # x.x
     # xxx
-    "0111101111101111",
+    "111101111101111",
     # xxx
     # x.x
     # xxx
     # ..x
     # xxx
-    "0111101111001111",
+    "111101111001111",
 ]
