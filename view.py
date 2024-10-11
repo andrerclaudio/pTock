@@ -76,53 +76,72 @@ class ViewConnector:
         align_to_center: bool = False,
         top_left_x: int = 0,
         top_left_y: int = 0,
-        tiles_per_pixel_width: int = 1,
+        tiles_per_pixel_width: int = 2,
         tiles_per_pixel_height: int = 1,
     ) -> None:
-        """ """
+        """Interpolates a grid of symbols into pixels on a display.
 
-        initial_column = 0
-        initial_line = 0
-        last_column = top_left_x
-        column = 0
-        line = 0
+        Args:
+            symbols (list): A list of symbol slices to be drawn.
+            pixel_color (PixelColor): The color used for drawing pixels.
+            align_to_center (bool): If True, aligns the symbols to the center.
+            top_left_x (int): The x-coordinate of the top-left corner for drawing.
+            top_left_y (int): The y-coordinate of the top-left corner for drawing.
+            tiles_per_pixel_width (int): Number of tiles per pixel in width.
+            tiles_per_pixel_height (int): Number of tiles per pixel in height.
+        """
 
-        for slice in symbols:
-            element: list = slice
+        if align_to_center:
+            # Calculate dimensions for centering
+            pixel_height = SHAPE_HEIGHT * tiles_per_pixel_height
+            pixel_width = SHAPE_WIDTH * tiles_per_pixel_width
 
-            initial_line = top_left_y
+            total_length_with_spaces = (
+                len(symbols) * pixel_width + (len(symbols) - 1) * tiles_per_pixel_width
+            )
 
-            for height in range(SHAPE_HEIGHT):
+            # Centering calculations
+            top_left_y = round((self.max_height - pixel_height) / 2)
+            top_left_x = round((self.max_width - total_length_with_spaces) / 2)
 
-                initial_column = last_column
+        # Initialize starting position for drawing
+        last_column_position = top_left_x
 
-                for width in range(SHAPE_WIDTH):
+        # Iterate through each symbol slice
+        for symbol_slice in symbols:
+            current_line_position = top_left_y  # Reset vertical position for each slice
 
-                    pixel = element.pop(0)
+            # Iterate over the height of the symbol
+            for row in range(SHAPE_HEIGHT):
+                column_position = (
+                    last_column_position  # Start from the left for each row
+                )
 
-                    line = 0
+                # Iterate over the width of the symbol
+                for col in range(SHAPE_WIDTH):
+                    pixel_value = symbol_slice.pop(0)  # Get the next pixel value
 
-                    for tile_line in range(tiles_per_pixel_height):
-
-                        line += 1
-                        column = 0
-
-                        for tile_column in range(tiles_per_pixel_width):
-
-                            column += 1
-
+                    # Draw tiles for this pixel
+                    for tile_row in range(tiles_per_pixel_height):
+                        for tile_col in range(tiles_per_pixel_width):
                             self.__draw_pixel(
                                 color=pixel_color,
-                                pixel=pixel,
-                                x=(tile_column + initial_column),
-                                y=(tile_line + initial_line),
+                                pixel=pixel_value,
+                                x=column_position + tile_col,  # Calculate x position
+                                y=current_line_position
+                                + tile_row,  # Calculate y position
                             )
 
-                    initial_column += column
-                initial_line += line
-            last_column = initial_column + 1
+                    column_position += tiles_per_pixel_width  # Move to next column
 
-        self.stdscr.refresh()
+                current_line_position += tiles_per_pixel_height  # Move to next row
+
+            last_column_position += (
+                SHAPE_WIDTH * tiles_per_pixel_width
+                + tiles_per_pixel_width  # Move to next slice
+            )
+
+        self.stdscr.refresh()  # Refresh display to show changes
 
     def __application(self, stdscr: curses.window) -> None:
         """Main application logic."""
