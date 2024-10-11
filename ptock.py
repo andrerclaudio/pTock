@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 def ptock() -> None:
     """ """
     tz = ZoneInfo("America/Argentina/Buenos_Aires")  # Set to Buenos  Aires, Argentina.
-    clock = ViewConnector(tz=tz)
+    clock = ViewConnector(timezone=tz)
     clock.run()
 
 

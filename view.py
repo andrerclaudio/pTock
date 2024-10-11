@@ -6,7 +6,7 @@ from enum import Enum
 from zoneinfo import ZoneInfo
 import sys
 from datetime import datetime
-from font import DIGIT, COLON, H, W
+from font import DIGIT, COLON, SHAPE_HEIGHT, SHAPE_WIDTH, SPACE
 
 # Custom-made libraries
 #
@@ -31,28 +31,27 @@ class PixelColor(Enum):
 class ViewConnector:
     """Class to manage screen operations using curses."""
 
-    def __init__(
-        self, tz: ZoneInfo = None, color: PixelColor = PixelColor.BLUE
-    ) -> None:
+    def __init__(self, timezone: ZoneInfo = None) -> None:
         self.clock = None
         self.stdscr: curses.window = None
-        self.tz_info: ZoneInfo = tz
-        self.last_mapped: list = map_to_symbols([0, 0, ":", 0, 0, ":", 0, 0])
+        self.max_height: int = 0
+        self.max_width: int = 0
+        self.tz_info: ZoneInfo = timezone
         self.pixel_buffer: dict = {}
-        self.color = color.value  # Store the integer value of the color enum
 
-    def __draw_pixel(self, pixel: str, x: int = 0, y: int = 0) -> None:
+    def __draw_pixel(
+        self, color: PixelColor, pixel: str, x: int = 0, y: int = 0
+    ) -> None:
         """Draw a pixel at the specified (x, y) coordinates."""
-        color_pair = curses.color_pair(self.color)
+        color_pair = curses.color_pair(color)
         key = f"{x}{y}"
 
         # Check if the pixel is already in the buffer and if it's the same
         if key not in self.pixel_buffer or self.pixel_buffer[key] != pixel:
             self.pixel_buffer[key] = pixel  # Save the pixel in the buffer
             try:
-                # Use '█' for pixel '1' and space for others
-                char = "█" if pixel == "1" else " "
-                self.stdscr.addch(y, x, char, color_pair)
+                # Use '█' for pixel '1' and space for '0'
+                self.stdscr.addch(y, x, "█" if pixel == "1" else " ", color_pair)
             except curses.error as e:
                 # Remove the pixel from buffer if drawing fails
                 self.pixel_buffer.pop(key, None)
@@ -70,22 +69,65 @@ class ViewConnector:
                 color.value, getattr(curses, f"COLOR_{color.name}"), curses.COLOR_BLACK
             )
 
-    def __interpolate(self, n_mapped: list) -> None:
+    def __interpolate(
+        self,
+        symbols: list,
+        pixel_color: PixelColor = PixelColor.GREEN.value,
+        align_to_center: bool = False,
+        top_left_x: int = 0,
+        top_left_y: int = 0,
+        tiles_per_pixel_width: int = 1,
+        tiles_per_pixel_height: int = 1,
+    ) -> None:
         """ """
 
-        block = 0
-        for slice in n_mapped:
+        initial_column = 0
+        initial_line = 0
+        last_column = top_left_x
+        column = 0
+        line = 0
+
+        for slice in symbols:
             element: list = slice
-            for height in range(H):
-                for weight in range(W):
-                    x = (block * 4) + weight
-                    self.__draw_pixel(pixel=element.pop(0), x=x, y=height)
-            block += 1
+
+            initial_line = top_left_y
+
+            for height in range(SHAPE_HEIGHT):
+
+                initial_column = last_column
+
+                for width in range(SHAPE_WIDTH):
+
+                    pixel = element.pop(0)
+
+                    line = 0
+
+                    for tile_line in range(tiles_per_pixel_height):
+
+                        line += 1
+                        column = 0
+
+                        for tile_column in range(tiles_per_pixel_width):
+
+                            column += 1
+
+                            self.__draw_pixel(
+                                color=pixel_color,
+                                pixel=pixel,
+                                x=(tile_column + initial_column),
+                                y=(tile_line + initial_line),
+                            )
+
+                    initial_column += column
+                initial_line += line
+            last_column = initial_column + 1
+
         self.stdscr.refresh()
 
     def __application(self, stdscr: curses.window) -> None:
         """Main application logic."""
         self.stdscr = stdscr
+        self.max_height, self.max_width = self.stdscr.getmaxyx()
         self.__colors_init()
         curses.curs_set(0)
         self.clock = Quartz(self.update, tz=self.tz_info)
@@ -99,7 +141,7 @@ class ViewConnector:
 
         time_slices: list = datetime_slicer(now)
         time_mapped: list = map_to_symbols(time_slices)
-        self.__interpolate(time_mapped)
+        self.__interpolate(symbols=time_mapped)
 
     def run(self) -> None:
         """Run the curses application."""

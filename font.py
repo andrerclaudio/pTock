@@ -4,10 +4,10 @@
 # bit at the bottom right.
 
 # Height of a single character in bits.
-H: int = 5
+SHAPE_HEIGHT: int = 5
 
 # Width of a single character in bits.
-W: int = 3
+SHAPE_WIDTH: int = 3
 
 # ...
 # .x.
@@ -23,7 +23,7 @@ COLON: str = "000010000010000"
 # ...
 # ...
 # Bitmap ' ' character.
-SPACE: int = 0b0000000000000000
+SPACE: str = "000000000000000"
 
 # .x.
 # x.x
