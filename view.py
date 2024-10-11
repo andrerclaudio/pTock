@@ -18,14 +18,14 @@ logger = logging.getLogger(__name__)
 class PixelColor(Enum):
     """Enumeration of pixel colors."""
 
-    BLACK = 1
-    BLUE = 2
-    CYAN = 3
-    GREEN = 4
+    BLACK = 8
+    BLUE = 4
+    CYAN = 6
+    GREEN = 2
     MAGENTA = 5
-    RED = 6
+    RED = 1
     WHITE = 7
-    YELLOW = 8
+    YELLOW = 3
 
 
 class ViewConnector:
