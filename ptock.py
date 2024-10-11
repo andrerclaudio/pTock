@@ -19,19 +19,53 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def ptock(x, y, width, height, second, military, center, color, format) -> None:
-    """Starts the digital clock with specified settings."""
-    tz = ZoneInfo("America/Argentina/Buenos_Aires")  # Set to Buenos Aires, Argentina.
-    # clock = ViewConnector(timezone=tz)
+def ptock(
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    second: bool,
+    military: bool,
+    center: bool,
+    color: int,
+    format: str,
+) -> None:
+    """
+    Starts the digital clock with specified settings.
 
-    # Here you can use the parameters (x, y, width, height, etc.) as needed
-    print(
-        f"Clock settings: Position({x}, {y}), Width: {width}, Height: {height}, "
-        f"Display Seconds: {second}, Military Time: {military}, Centered: {center}, "
-        f"Color: {color}, Date Format: '{format}'"
+    Args:
+        x (int): Horizontal 0-indexed position of the top-left corner of the clock.
+        y (int): Vertical 0-indexed position of the top-left corner of the clock.
+        width (int): Font width in characters per tile.
+        height (int): Font height in characters per tile.
+        second (bool): Whether to display seconds.
+        military (bool): Whether to display military (24-hour) time.
+        center (bool): Whether to center the clock in the terminal.
+        color (int): Color to use for displaying the clock.
+        format (str): Date format to display.
+
+    Returns:
+        None
+    """
+    # Set the timezone to Buenos Aires, Argentina
+    tz = ZoneInfo("America/Argentina/Buenos_Aires")
+
+    # Create an instance of ViewConnector with the provided settings
+    clock = ViewConnector(
+        x=x,  # Horizontal position
+        y=y,  # Vertical position
+        width=width,  # Width of the clock tiles
+        height=height,  # Height of the clock tiles
+        second=second,  # Display seconds or not
+        military=military,  # Use 24-hour format or not
+        center=center,  # Center the clock or use custom positioning
+        color=color,  # Color setting for the clock
+        format=format,  # Date format to display
+        timezone=tz,  # Timezone for the clock
     )
 
-    # clock.run()
+    # Run the clock application
+    clock.run()
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):

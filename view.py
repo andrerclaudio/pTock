@@ -6,11 +6,11 @@ from enum import Enum
 from zoneinfo import ZoneInfo
 import sys
 from datetime import datetime
-from font import DIGIT, COLON, SHAPE_HEIGHT, SHAPE_WIDTH, SPACE
 
 # Custom-made libraries
 #
 from mechanism import Quartz
+from font import DIGIT, COLON, SHAPE_HEIGHT, SHAPE_WIDTH, SPACE
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +31,32 @@ class PixelColor(Enum):
 class ViewConnector:
     """Class to manage screen operations using curses."""
 
-    def __init__(self, timezone: ZoneInfo = None) -> None:
-        self.clock = None
+    def __init__(
+        self,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        second: bool,
+        military: bool,
+        center: bool,
+        color: int,
+        format: str,
+        timezone: ZoneInfo = None,
+    ) -> None:
+        self.top_left_x = x
+        self.top_left_y = y
+        self.tiles_per_pixel_width = width
+        self.tiles_per_pixel_height = height
+        self.show_seconds = second
+        self.military_time = military
+        self.align_to_center = center
+        self.pixel_color = color
+        self.format = format
+        self.tz_info: ZoneInfo = timezone
         self.stdscr: curses.window = None
         self.max_height: int = 0
         self.max_width: int = 0
-        self.tz_info: ZoneInfo = timezone
         self.pixel_buffer: dict = {}
 
     def __draw_pixel(
@@ -72,44 +92,35 @@ class ViewConnector:
     def __interpolate(
         self,
         symbols: list,
-        pixel_color: PixelColor = PixelColor.GREEN.value,
-        align_to_center: bool = False,
-        top_left_x: int = 0,
-        top_left_y: int = 0,
-        tiles_per_pixel_width: int = 2,
-        tiles_per_pixel_height: int = 1,
     ) -> None:
         """Interpolates a grid of symbols into pixels on a display.
 
         Args:
             symbols (list): A list of symbol slices to be drawn.
-            pixel_color (PixelColor): The color used for drawing pixels.
-            align_to_center (bool): If True, aligns the symbols to the center.
-            top_left_x (int): The x-coordinate of the top-left corner for drawing.
-            top_left_y (int): The y-coordinate of the top-left corner for drawing.
-            tiles_per_pixel_width (int): Number of tiles per pixel in width.
-            tiles_per_pixel_height (int): Number of tiles per pixel in height.
         """
 
-        if align_to_center:
+        if self.align_to_center:
             # Calculate dimensions for centering
-            pixel_height = SHAPE_HEIGHT * tiles_per_pixel_height
-            pixel_width = SHAPE_WIDTH * tiles_per_pixel_width
+            pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
+            pixel_width = SHAPE_WIDTH * self.tiles_per_pixel_width
 
             total_length_with_spaces = (
-                len(symbols) * pixel_width + (len(symbols) - 1) * tiles_per_pixel_width
+                len(symbols) * pixel_width
+                + (len(symbols) - 1) * self.tiles_per_pixel_width
             )
 
             # Centering calculations
-            top_left_y = round((self.max_height - pixel_height) / 2)
-            top_left_x = round((self.max_width - total_length_with_spaces) / 2)
+            self.top_left_y = round((self.max_height - pixel_height) / 2)
+            self.top_left_x = round((self.max_width - total_length_with_spaces) / 2)
 
         # Initialize starting position for drawing
-        last_column_position = top_left_x
+        last_column_position = self.top_left_x
 
         # Iterate through each symbol slice
         for symbol_slice in symbols:
-            current_line_position = top_left_y  # Reset vertical position for each slice
+            current_line_position = (
+                self.top_left_y
+            )  # Reset vertical position for each slice
 
             # Iterate over the height of the symbol
             for row in range(SHAPE_HEIGHT):
@@ -122,23 +133,23 @@ class ViewConnector:
                     pixel_value = symbol_slice.pop(0)  # Get the next pixel value
 
                     # Draw tiles for this pixel
-                    for tile_row in range(tiles_per_pixel_height):
-                        for tile_col in range(tiles_per_pixel_width):
+                    for tile_row in range(self.tiles_per_pixel_height):
+                        for tile_col in range(self.tiles_per_pixel_width):
                             self.__draw_pixel(
-                                color=pixel_color,
+                                color=self.pixel_color,
                                 pixel=pixel_value,
                                 x=column_position + tile_col,  # Calculate x position
                                 y=current_line_position
                                 + tile_row,  # Calculate y position
                             )
 
-                    column_position += tiles_per_pixel_width  # Move to next column
+                    column_position += self.tiles_per_pixel_width  # Move to next column
 
-                current_line_position += tiles_per_pixel_height  # Move to next row
+                current_line_position += self.tiles_per_pixel_height  # Move to next row
 
             last_column_position += (
-                SHAPE_WIDTH * tiles_per_pixel_width
-                + tiles_per_pixel_width  # Move to next slice
+                SHAPE_WIDTH * self.tiles_per_pixel_width
+                + self.tiles_per_pixel_width  # Move to next slice
             )
 
         self.stdscr.refresh()  # Refresh display to show changes
