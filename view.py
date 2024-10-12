@@ -166,12 +166,12 @@ class ViewConnector:
         self.stdscr.clear()
         self.clock.stop()
 
-    def update(self, now: datetime) -> None:
+    def update(self, current_time: datetime) -> None:
         """Update screen by drawing a pixel without clearing previous content."""
 
-        time_slices: list = datetime_slicer(now)
-        time_mapped: list = map_to_symbols(time_slices)
-        self.__interpolate(symbols=time_mapped)
+        time_components: list = datetime_slicer(current_time)
+        symbol_mappings: list = map_to_symbols(time_components)
+        self.__interpolate(symbols=symbol_mappings)
 
     def run(self) -> None:
         """Run the curses application."""
@@ -184,53 +184,58 @@ class ViewConnector:
             sys.exit(1)
 
 
-def datetime_slicer(now: datetime) -> list:
-    """ """
-    seconds = now.second
-    minutes = now.minute
-    hours = now.hour
+def datetime_slicer(now: datetime) -> list[int]:
+    """Slice the current datetime into its individual components.
 
-    hour_dec, hour_unit = divmod(hours, 10)
-    min_dec, min_unit = divmod(minutes, 10)
-    sec_dec, sec_unit = divmod(seconds, 10)
+    This function takes a datetime object and extracts the hour, minute,
+    and second components. It returns a list containing each component
+    as an integer, with colons represented as strings for formatting.
 
-    return [hour_dec, hour_unit, ":", min_dec, min_unit, ":", sec_dec, sec_unit]
+    Args:
+        now (datetime): The current datetime to be sliced.
+
+    Returns:
+        list[int]: A list containing the tens and units of hours, minutes,
+                    and seconds, interspersed with string colons.
+                    Example: [hour_tens, hour_units, ":", minute_tens,
+                              minute_units, ":", second_tens, second_units]
+    """
+    return [
+        now.hour // 10,
+        now.hour % 10,
+        ":",
+        now.minute // 10,
+        now.minute % 10,
+        ":",
+        now.second // 10,
+        now.second % 10,
+    ]
 
 
-def map_to_symbols(elements: list) -> list:
-    """ """
-    pixel_buffer = []
+def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
+    """Map time slices to their corresponding binary string representations.
 
-    number = DIGIT[elements[0]]
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
+    This function takes a list of time components (digits and colons)
+    and converts each component into its binary string representation
+    using predefined mappings. The output is a pixel buffer where each
+    element is represented as a list of strings.
 
-    number = DIGIT[elements[1]]
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
+    Args:
+        elements (list[int | str]): A list containing integers (0-9)
+                                     representing digits and strings
+                                     for colons.
 
-    number = COLON
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
+    Returns:
+        list[list[str]]: A nested list where each inner list represents
+                          the binary string of a corresponding time component.
+    """
+    pixel_buffer: str = []
 
-    number = DIGIT[elements[3]]
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
-
-    number = DIGIT[elements[4]]
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
-
-    number = COLON
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
-
-    number = DIGIT[elements[6]]
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
-
-    number = DIGIT[elements[7]]
-    binary_str = list(number)
-    pixel_buffer.append(binary_str)
+    # Create a mapping for each element to its binary representation
+    for element in elements:
+        if isinstance(element, str):  # Handle colons directly
+            pixel_buffer.append(list(COLON))
+        else:
+            pixel_buffer.append(list(DIGIT[element]))
 
     return pixel_buffer
