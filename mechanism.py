@@ -32,7 +32,9 @@ class Quartz(threading.Thread):
         """
         super().__init__(name="QuartzClock", daemon=True)
         self.update = update
-        self.tz_info = tz
+        self.tz_info = tz or ZoneInfo(
+            "UTC"
+        )  # Default to UTC if no timezone is provided
         self.__stop_event = threading.Event()
         self.start()
 
@@ -41,19 +43,27 @@ class Quartz(threading.Thread):
         Main loop of the Quartz thread.
 
         Continuously fetches the current system timestamp, respects the provided timezone (or defaults to
-        the system's local timezone), and calls the `update` function with it every second until stopped.
+        UTC), and calls the `update` function with it every second until stopped.
         """
         try:
 
-            while not self.__stop_event.wait(timeout=1):
+            past_timestamp = datetime.now(tz=self.tz_info).timestamp()
+
+            while not self.__stop_event.wait(timeout=0.1):
 
                 now = datetime.now(tz=self.tz_info)
-                self.update(now)
+                current_timestamp = now.timestamp()
+
+                # Call update if time has changed
+                if current_timestamp != past_timestamp:
+
+                    self.update(now)
+                    past_timestamp = current_timestamp
 
             logger.info("Screen update thread stopped.")
 
-        except threading.ThreadError as e:
-            logging.error(f"An error occurred during the thread operation: {e}")
+        except RuntimeError as e:
+            logger.error(f"An error occurred during the thread operation: {e}")
             sys.exit(1)  # Exit the program in case of an error
 
     def stop(self) -> None:

@@ -31,7 +31,7 @@ SPACE: str = "000000000000000"
 # x.x
 # x.x
 # Bitmap 'A' character.
-A: int = 0b0010101111101101
+LETTER_A: str = "010101111101101"
 
 # xxx
 # x.x
@@ -39,7 +39,7 @@ A: int = 0b0010101111101101
 # x..
 # x..
 # Bitmap 'P' character.
-P: int = 0b0111101111100100
+LETTER_P: str = "111101111100100"
 
 # x.x
 # xxx
@@ -47,7 +47,7 @@ P: int = 0b0111101111100100
 # x.x
 # x.x
 # Bitmap 'M' character.
-M: int = 0b0101111101101101
+LETTER_M: str = "101111101101101"
 
 # Bitmap digits from '0' - '9'.
 DIGIT: str = [
