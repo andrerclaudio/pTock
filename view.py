@@ -10,7 +10,7 @@ from datetime import datetime
 # Custom-made libraries
 #
 from mechanism import Quartz
-from font import DIGIT, COLON, SHAPE_HEIGHT, SHAPE_WIDTH, SPACE
+from font import DIGIT, COLON, SHAPE_HEIGHT, SHAPE_WIDTH
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,6 @@ class ViewConnector:
         military: bool,
         center: bool,
         color: int,
-        format: str,
         timezone: ZoneInfo = None,
     ) -> None:
         self.top_left_x = x
@@ -52,18 +51,15 @@ class ViewConnector:
         self.military_time = military
         self.align_to_center = center
         self.pixel_color = color
-        self.format = format
         self.tz_info: ZoneInfo = timezone
         self.stdscr: curses.window = None
         self.max_height: int = 0
         self.max_width: int = 0
         self.pixel_buffer: dict = {}
 
-    def __draw_pixel(
-        self, color: PixelColor, pixel: str, x: int = 0, y: int = 0
-    ) -> None:
+    def __draw_pixel(self, pixel: str, x: int = 0, y: int = 0) -> None:
         """Draw a pixel at the specified (x, y) coordinates."""
-        color_pair = curses.color_pair(color)
+        color_pair = curses.color_pair(self.pixel_color)
         key = f"{x}{y}"
 
         # Check if the pixel is already in the buffer and if it's the same
@@ -136,7 +132,6 @@ class ViewConnector:
                     for tile_row in range(self.tiles_per_pixel_height):
                         for tile_col in range(self.tiles_per_pixel_width):
                             self.__draw_pixel(
-                                color=self.pixel_color,
                                 pixel=pixel_value,
                                 x=column_position + tile_col,  # Calculate x position
                                 y=current_line_position
@@ -169,7 +164,9 @@ class ViewConnector:
     def update(self, current_time: datetime) -> None:
         """Update screen by drawing a pixel without clearing previous content."""
 
-        time_components: list = datetime_slicer(current_time)
+        time_components: list = datetime_slicer(
+            now=current_time, show_seconds=self.show_seconds
+        )
         symbol_mappings: list = map_to_symbols(time_components)
         self.__interpolate(symbols=symbol_mappings)
 
@@ -184,7 +181,7 @@ class ViewConnector:
             sys.exit(1)
 
 
-def datetime_slicer(now: datetime) -> list[int]:
+def datetime_slicer(now: datetime, show_seconds: bool = False) -> list[int]:
     """Slice the current datetime into its individual components.
 
     This function takes a datetime object and extracts the hour, minute,
@@ -200,16 +197,28 @@ def datetime_slicer(now: datetime) -> list[int]:
                     Example: [hour_tens, hour_units, ":", minute_tens,
                               minute_units, ":", second_tens, second_units]
     """
-    return [
-        now.hour // 10,
-        now.hour % 10,
-        ":",
-        now.minute // 10,
-        now.minute % 10,
-        ":",
-        now.second // 10,
-        now.second % 10,
-    ]
+    if show_seconds:
+
+        return [
+            now.hour // 10,
+            now.hour % 10,
+            ":",
+            now.minute // 10,
+            now.minute % 10,
+            ":",
+            now.second // 10,
+            now.second % 10,
+        ]
+
+    else:
+
+        return [
+            now.hour // 10,
+            now.hour % 10,
+            ":",
+            now.minute // 10,
+            now.minute % 10,
+        ]
 
 
 def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
@@ -229,7 +238,7 @@ def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
         list[list[str]]: A nested list where each inner list represents
                           the binary string of a corresponding time component.
     """
-    pixel_buffer: str = []
+    pixel_buffer = []
 
     # Create a mapping for each element to its binary representation
     for element in elements:

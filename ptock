@@ -28,7 +28,6 @@ def ptock(
     military: bool,
     center: bool,
     color: int,
-    format: str,
 ) -> None:
     """
     Starts the digital clock with specified settings.
@@ -42,7 +41,6 @@ def ptock(
         military (bool): Whether to display military (24-hour) time.
         center (bool): Whether to center the clock in the terminal.
         color (int): Color to use for displaying the clock.
-        format (str): Date format to display.
 
     Returns:
         None
@@ -60,7 +58,6 @@ def ptock(
         military=military,  # Use 24-hour format or not
         center=center,  # Center the clock or use custom positioning
         color=color,  # Color setting for the clock
-        format=format,  # Date format to display
         timezone=tz,  # Timezone for the clock
     )
 
@@ -161,13 +158,6 @@ if __name__ == "__main__":
         default=2,
         help="Change the color of the time [default: 2]",
     )
-    parser.add_argument(
-        "-f",
-        "--format",
-        type=str,
-        default="%F | %Z",
-        help='Change the date format [default: "%%F | %%Z"]',
-    )
 
     # Parse the command-line arguments
     args = parser.parse_args()
@@ -182,5 +172,4 @@ if __name__ == "__main__":
         args.military,
         args.center,
         args.color,
-        args.format,
     )

@@ -3,7 +3,6 @@ import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import threading
-from time import sleep
 import sys
 from typing import Optional, Callable
 
