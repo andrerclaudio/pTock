@@ -42,14 +42,14 @@ class ViewConnector:
 
     def __init__(
         self,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-        second: bool,
-        military: bool,
-        center: bool,
-        color: int,
+        x: int = 0,
+        y: int = 0,
+        width: int = 2,
+        height: int = 1,
+        second: bool = False,
+        military: bool = False,
+        center: bool = False,
+        color: int = 2,
         timezone: ZoneInfo = None,
     ) -> None:
         self.top_left_x = x
@@ -262,17 +262,19 @@ def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
     Args:
         elements (list[int | str]): A list containing integers (0-9)
                                      representing digits and strings
-                                     for colons.
+                                     for colons, spaces, AM, and PM.
 
     Returns:
         list[list[str]]: A nested list where each inner list represents
                           the binary string of a corresponding time component.
     """
+
     pixel_buffer = []
 
     # Create a mapping for each element to its binary representation
     for element in elements:
-        if isinstance(element, str):  # Handle strings directly
+        if isinstance(element, str):  # Handle string components
+            # Map specific string characters to their binary representations
             if element == ":":
                 pixel_buffer.append(list(COLON))
             elif element == " ":
@@ -284,6 +286,7 @@ def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
             elif element == "M":
                 pixel_buffer.append(list(LETTER_M))
         else:
+            # Map digit integers to their binary representations
             pixel_buffer.append(list(DIGIT[element]))
 
     return pixel_buffer

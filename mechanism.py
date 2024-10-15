@@ -61,7 +61,7 @@ class Quartz(threading.Thread):
 
             logger.info("Screen update thread stopped.")
 
-        except RuntimeError as e:
+        except threading.ThreadError as e:
             logger.error(f"An error occurred during the thread operation: {e}")
             sys.exit(1)  # Exit the program in case of an error
 

@@ -20,31 +20,37 @@ logger = logging.getLogger(__name__)
 
 
 def ptock(
-    x: int,
-    y: int,
-    width: int,
-    height: int,
-    second: bool,
-    military: bool,
-    center: bool,
-    color: int,
+    x: int = 0,
+    y: int = 0,
+    width: int = 2,
+    height: int = 1,
+    second: bool = False,
+    military: bool = False,
+    center: bool = False,
+    color: int = 2,
 ) -> None:
     """
-    Starts the digital clock with specified settings.
+    Starts a digital clock with specified settings in the terminal.
+
+    This function initializes and runs a digital clock display with customizable
+    parameters such as position, size, time format, and color. The clock can
+    be configured to show seconds and to use either 12-hour or military (24-hour)
+    time format.
 
     Args:
         x (int): Horizontal 0-indexed position of the top-left corner of the clock.
         y (int): Vertical 0-indexed position of the top-left corner of the clock.
         width (int): Font width in characters per tile.
         height (int): Font height in characters per tile.
-        second (bool): Whether to display seconds.
-        military (bool): Whether to display military (24-hour) time.
-        center (bool): Whether to center the clock in the terminal.
-        color (int): Color to use for displaying the clock.
+        second (bool): Flag indicating whether to display seconds. Defaults to False.
+        military (bool): Flag indicating whether to display military (24-hour) time. Defaults to False.
+        center (bool): Flag indicating whether to center the clock in the terminal. Defaults to False.
+        color (int): Color code for displaying the clock. Defaults to 2.
 
     Returns:
-        None
+        None: This function does not return any value; it runs the clock application directly.
     """
+
     # Set the timezone to Buenos Aires, Argentina
     tz = ZoneInfo("America/Argentina/Buenos_Aires")
 
@@ -108,7 +114,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
         description="A digital clock for the terminal.",
-        usage="tock [OPTIONS]",
+        usage="ptock [OPTIONS]",
         formatter_class=CustomHelpFormatter,
     )
 
