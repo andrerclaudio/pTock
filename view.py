@@ -10,7 +10,16 @@ from datetime import datetime
 # Custom-made libraries
 #
 from mechanism import Quartz
-from font import DIGIT, COLON, SHAPE_HEIGHT, SHAPE_WIDTH
+from font import (
+    DIGIT,
+    COLON,
+    SHAPE_HEIGHT,
+    SHAPE_WIDTH,
+    SPACE,
+    LETTER_A,
+    LETTER_M,
+    LETTER_P,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -165,7 +174,9 @@ class ViewConnector:
         """Update screen by drawing a pixel without clearing previous content."""
 
         time_components: list = datetime_slicer(
-            now=current_time, show_seconds=self.show_seconds
+            now=current_time,
+            show_seconds=self.show_seconds,
+            military_time=self.military_time,
         )
         symbol_mappings: list = map_to_symbols(time_components)
         self.__interpolate(symbols=symbol_mappings)
@@ -181,44 +192,63 @@ class ViewConnector:
             sys.exit(1)
 
 
-def datetime_slicer(now: datetime, show_seconds: bool = False) -> list[int]:
+def datetime_slicer(
+    now: datetime, show_seconds: bool = False, military_time: bool = False
+) -> list[int]:
     """Slice the current datetime into its individual components.
 
     This function takes a datetime object and extracts the hour, minute,
-    and second components. It returns a list containing each component
-    as an integer, with colons represented as strings for formatting.
+    and second components along with AM/PM designation if required. It
+    returns a list containing each component as an integer, formatted with
+    colons, and may include AM/PM if not using military time.
 
     Args:
         now (datetime): The current datetime to be sliced.
+        show_seconds (bool): Flag indicating whether to include seconds in output. Defaults to False.
+        military_time (bool): Flag indicating whether to use military time (24-hour format). Defaults to False.
 
     Returns:
         list[int]: A list containing the tens and units of hours, minutes,
                     and seconds, interspersed with string colons.
                     Example: [hour_tens, hour_units, ":", minute_tens,
-                              minute_units, ":", second_tens, second_units]
+                    minute_units, ":", second_tens, second_units]
     """
-    if show_seconds:
 
-        return [
-            now.hour // 10,
-            now.hour % 10,
-            ":",
-            now.minute // 10,
-            now.minute % 10,
-            ":",
-            now.second // 10,
-            now.second % 10,
-        ]
-
+    # Determine hour format based on military_time flag
+    if military_time:
+        hours = now.hour
+        am_pm = ""
     else:
+        hours = int(now.strftime("%I"))  # 12-hour format
+        am_pm = now.strftime("%p")  # AM/PM designator
 
-        return [
-            now.hour // 10,
-            now.hour % 10,
-            ":",
-            now.minute // 10,
-            now.minute % 10,
-        ]
+    minutes = int(now.strftime("%M"))
+    seconds = int(now.strftime("%S")) if show_seconds else None
+
+    # Prepare the output list
+    output = [
+        hours // 10,  # Tens place of hours
+        hours % 10,  # Units place of hours
+        ":",  # Separator for time components
+        minutes // 10,  # Tens place of minutes
+        minutes % 10,  # Units place of minutes
+    ]
+
+    # Include seconds and AM/PM if necessary
+    if show_seconds:
+        output.extend(
+            [
+                ":",  # Separator for seconds
+                seconds // 10,  # Tens place of seconds
+                seconds % 10,  # Units place of seconds
+            ]
+        )
+
+    if not military_time:
+        output.append(" ")  # Space before AM/PM indicator
+        output.extend(list(am_pm))  # Add AM/PM indicator
+
+    return output
 
 
 def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
@@ -242,8 +272,17 @@ def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
 
     # Create a mapping for each element to its binary representation
     for element in elements:
-        if isinstance(element, str):  # Handle colons directly
-            pixel_buffer.append(list(COLON))
+        if isinstance(element, str):  # Handle strings directly
+            if element == ":":
+                pixel_buffer.append(list(COLON))
+            elif element == " ":
+                pixel_buffer.append(list(SPACE))
+            elif element == "A":
+                pixel_buffer.append(list(LETTER_A))
+            elif element == "P":
+                pixel_buffer.append(list(LETTER_P))
+            elif element == "M":
+                pixel_buffer.append(list(LETTER_M))
         else:
             pixel_buffer.append(list(DIGIT[element]))
 
