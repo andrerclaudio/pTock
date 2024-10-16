@@ -59,11 +59,15 @@ class ViewConnector:
         self.show_seconds = second
         self.military_time = military
         self.align_to_center = center
-        self.pixel_color = color
+        self.pixel_color = (
+            color
+            if PixelColor.RED.value <= color <= PixelColor.BLACK.value
+            else PixelColor.GREEN.value
+        )
         self.tz_info: ZoneInfo = timezone
         self.stdscr: curses.window = None
-        self.max_height: int = 0
-        self.max_width: int = 0
+        self.screen_height: int = 0
+        self.screen_width: int = 0
         self.pixel_buffer: dict = {}
 
     def __draw_pixel(self, pixel: str, x: int = 0, y: int = 0) -> None:
@@ -103,20 +107,6 @@ class ViewConnector:
         Args:
             symbols (list): A list of symbol slices to be drawn.
         """
-
-        if self.align_to_center:
-            # Calculate dimensions for centering
-            pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
-            pixel_width = SHAPE_WIDTH * self.tiles_per_pixel_width
-
-            total_length_with_spaces = (
-                len(symbols) * pixel_width
-                + (len(symbols) - 1) * self.tiles_per_pixel_width
-            )
-
-            # Centering calculations
-            self.top_left_y = round((self.max_height - pixel_height) / 2)
-            self.top_left_x = round((self.max_width - total_length_with_spaces) / 2)
 
         # Initialize starting position for drawing
         last_column_position = self.top_left_x
@@ -158,10 +148,74 @@ class ViewConnector:
 
         self.stdscr.refresh()  # Refresh display to show changes
 
+    def __calculate_center_xy_position(self) -> None:
+        """ """
+
+        clock_digits_count = (
+            #
+            5
+            + (3 if self.show_seconds else 0)
+            + (3 if not self.military_time else 0)
+        )
+
+        # Calculate dimensions for centering
+        pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
+        pixel_width = SHAPE_WIDTH * self.tiles_per_pixel_width
+
+        total_length_with_spaces = (
+            clock_digits_count * pixel_width
+            + (clock_digits_count - 1) * self.tiles_per_pixel_width
+        )
+
+        # Centering calculations
+        self.top_left_y = round((self.screen_height - pixel_height) / 2)
+        self.top_left_x = round((self.screen_width - total_length_with_spaces) / 2)
+
+    def __check_max_digit_height(self) -> bool:
+        """ """
+
+        pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
+        return True if (self.screen_height - self.top_left_y) >= pixel_height else False
+
+    def __check_max_digit_width(self) -> bool:
+        """ """
+
+        clock_digits_count = (
+            #
+            5
+            + (3 if self.show_seconds else 0)
+            + (3 if not self.military_time else 0)
+        )
+
+        pixel_width = SHAPE_WIDTH * self.tiles_per_pixel_width
+
+        total_length_with_spaces = (
+            clock_digits_count * pixel_width
+            + (clock_digits_count - 1) * self.tiles_per_pixel_width
+        )
+
+        return (
+            True
+            if (self.screen_width - self.top_left_x) >= total_length_with_spaces
+            else False
+        )
+
     def __application(self, stdscr: curses.window) -> None:
         """Main application logic."""
         self.stdscr = stdscr
-        self.max_height, self.max_width = self.stdscr.getmaxyx()
+        self.screen_height, self.screen_width = self.stdscr.getmaxyx()
+
+        if self.align_to_center:
+            self.__calculate_center_xy_position()
+
+        if not self.__check_max_digit_height():
+            logger.error("Height value not allowed!")
+            sys.exit(1)
+
+        if not self.__check_max_digit_width():
+            logger.error("Width value not allowed!")
+            sys.exit(1)
+
         self.__colors_init()
         curses.curs_set(0)
         self.clock = Quartz(self.update, tz=self.tz_info)

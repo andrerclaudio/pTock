@@ -162,7 +162,8 @@ if __name__ == "__main__":
         "--color",
         type=int,
         default=2,
-        help="Change the color of the time [default: 2]",
+        help="Change the color of the time [default: 2]. The options are: "
+        "1-red, 2-green, 3-yellow, 4-blue, 5-magenta, 6-cyan, 7-white and 0-black",
     )
 
     # Parse the command-line arguments
