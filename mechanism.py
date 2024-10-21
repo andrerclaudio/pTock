@@ -1,13 +1,9 @@
 # Built-in libraries
-import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import threading
 import sys
 from typing import Optional, Callable
-
-
-logger = logging.getLogger(__name__)
 
 
 class Quartz(threading.Thread):
@@ -59,10 +55,7 @@ class Quartz(threading.Thread):
                     self.update(now)
                     past_timestamp = current_timestamp
 
-            logger.info("Screen update thread stopped.")
-
         except threading.ThreadError as e:
-            logger.error(f"An error occurred during the thread operation: {e}")
             sys.exit(1)  # Exit the program in case of an error
 
     def stop(self) -> None:

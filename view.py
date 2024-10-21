@@ -1,6 +1,5 @@
 # Buit-in libraries
 #
-import logging
 import curses
 from enum import Enum
 from zoneinfo import ZoneInfo
@@ -20,8 +19,6 @@ from font import (
     LETTER_M,
     LETTER_P,
 )
-
-logger = logging.getLogger(__name__)
 
 
 class PixelColor(Enum):
@@ -73,7 +70,7 @@ class ViewConnector:
     def __draw_pixel(self, pixel: str, x: int = 0, y: int = 0) -> None:
         """Draw a pixel at the specified (x, y) coordinates."""
         color_pair = curses.color_pair(self.pixel_color)
-        key = f"{x}{y}"
+        key = f"{x}:{y}"
 
         # Check if the pixel is already in the buffer and if it's the same
         if key not in self.pixel_buffer or self.pixel_buffer[key] != pixel:
@@ -84,7 +81,6 @@ class ViewConnector:
             except curses.error as e:
                 # Remove the pixel from buffer if drawing fails
                 self.pixel_buffer.pop(key, None)
-                logger.error(f"Error drawing pixel at ({x}, {y}): {e}", exc_info=False)
 
     @staticmethod
     def __colors_init() -> None:
@@ -132,9 +128,10 @@ class ViewConnector:
                         for tile_col in range(self.tiles_per_pixel_width):
                             self.__draw_pixel(
                                 pixel=pixel_value,
-                                x=column_position + tile_col,  # Calculate x position
-                                y=current_line_position
-                                + tile_row,  # Calculate y position
+                                x=(column_position + tile_col),  # Calculate x position
+                                y=(
+                                    current_line_position + tile_row
+                                ),  # Calculate y position
                             )
 
                     column_position += self.tiles_per_pixel_width  # Move to next column
@@ -171,13 +168,13 @@ class ViewConnector:
         self.top_left_y = round((self.screen_height - pixel_height) / 2)
         self.top_left_x = round((self.screen_width - total_length_with_spaces) / 2)
 
-    def __check_max_digit_height(self) -> bool:
+    def __check_max_digit_height_and_Xpos(self) -> bool:
         """ """
 
         pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
         return True if (self.screen_height - self.top_left_y) >= pixel_height else False
 
-    def __check_max_digit_width(self) -> bool:
+    def __check_max_digit_width_and_Ypos(self) -> bool:
         """ """
 
         clock_digits_count = (
@@ -208,12 +205,10 @@ class ViewConnector:
         if self.align_to_center:
             self.__calculate_center_xy_position()
 
-        if not self.__check_max_digit_height():
-            logger.error("Height value not allowed!")
+        if not self.__check_max_digit_height_and_Xpos():
             sys.exit(1)
 
-        if not self.__check_max_digit_width():
-            logger.error("Width value not allowed!")
+        if not self.__check_max_digit_width_and_Ypos():
             sys.exit(1)
 
         self.__colors_init()
@@ -242,7 +237,6 @@ class ViewConnector:
             curses.wrapper(self.__application)
 
         except curses.error as e:
-            logger.error(f"Curses error occurred: {e}")
             sys.exit(1)
 
 
