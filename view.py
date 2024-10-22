@@ -240,7 +240,6 @@ class ViewConnector:
             self.stdscr.clear()
             if hasattr(self, "clock"):
                 self.clock.stop()
-            curses.endwin()  # Ensure curses is properly reset on exit
             sys.exit(0)  # Exit with a status code of 0 (success)
 
     def update(self, current_time: datetime) -> None:
