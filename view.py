@@ -3,7 +3,7 @@
 import curses
 from enum import Enum
 from zoneinfo import ZoneInfo
-import sys
+import sys, signal
 from datetime import datetime
 
 # Custom-made libraries
@@ -195,9 +195,8 @@ class ViewConnector:
             else False
         )
 
-    def __application(self, stdscr: curses.window) -> None:
-        """Main application logic."""
-        self.stdscr = stdscr
+    def __handle_resize(self):
+        """Handle window resizing and adjust content accordingly."""
         self.screen_height, self.screen_width = self.stdscr.getmaxyx()
 
         if self.align_to_center:
@@ -206,13 +205,43 @@ class ViewConnector:
         if not self.__check_fit():
             sys.exit(1)
 
+        self.stdscr.clear()
+        # Redraw screen content as needed
+        # Clear the pixel buffer in order to reset previus positions
+        self.pixel_buffer: dict = {}
+
+    def __application(self, stdscr: curses.window) -> None:
+        """Main application logic."""
+        self.stdscr = stdscr
+        self.__handle_resize()
+
+        # Initialize clock and other resources
         self.__colors_init()
         curses.curs_set(0)
         self.clock = Quartz(self.update, tz=self.tz_info)
 
-        self.stdscr.getch()
-        self.stdscr.clear()
-        self.clock.stop()
+        try:
+            while True:
+                key = self.stdscr.getch()
+
+                # Handle resize event if terminal is resized
+                if curses.is_term_resized(self.screen_height, self.screen_width):
+                    self.__handle_resize()
+
+                # Exit condition (for example, press 'q' to quit)
+                if key == ord("q"):
+                    break
+
+        except KeyboardInterrupt:
+            # Gracefully handle Ctrl+C (SIGINT)
+            pass
+
+        finally:
+            self.stdscr.clear()
+            if hasattr(self, "clock"):
+                self.clock.stop()
+            curses.endwin()  # Ensure curses is properly reset on exit
+            sys.exit(0)  # Exit with a status code of 0 (success)
 
     def update(self, current_time: datetime) -> None:
         """Update screen by drawing a pixel without clearing previous content."""
