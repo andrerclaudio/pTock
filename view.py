@@ -87,12 +87,11 @@ class ViewConnector:
         """Initialize the color system for use in the terminal."""
         curses.initscr()  # Initialize the curses mode
         curses.start_color()  # Enable color functionality
+        curses.use_default_colors()
 
         # Initialize color pairs
         for color in PixelColor:
-            curses.init_pair(
-                color.value, getattr(curses, f"COLOR_{color.name}"), curses.COLOR_BLACK
-            )
+            curses.init_pair(color.value, getattr(curses, f"COLOR_{color.name}"), -1)
 
     def __interpolate(
         self,
