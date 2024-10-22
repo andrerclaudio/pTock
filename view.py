@@ -167,14 +167,13 @@ class ViewConnector:
         self.top_left_y = round((self.screen_height - pixel_height) / 2)
         self.top_left_x = round((self.screen_width - total_length_with_spaces) / 2)
 
-    def __check_max_digit_height_and_Xpos(self) -> bool:
-        """ """
+    def __check_fit(self) -> bool:
+        """Check if the clock can fit within the available screen space and given passed parameters."""
 
         pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
-        return True if (self.screen_height - self.top_left_y) >= pixel_height else False
 
-    def __check_max_digit_width_and_Ypos(self) -> bool:
-        """ """
+        if (self.screen_height - self.top_left_y) < pixel_height:
+            return False
 
         clock_digits_count = (
             #
@@ -204,10 +203,7 @@ class ViewConnector:
         if self.align_to_center:
             self.__calculate_center_xy_position()
 
-        if not self.__check_max_digit_height_and_Xpos():
-            sys.exit(1)
-
-        if not self.__check_max_digit_width_and_Ypos():
+        if not self.__check_fit():
             sys.exit(1)
 
         self.__colors_init()
@@ -262,12 +258,8 @@ def datetime_slicer(
     """
 
     # Determine hour format based on military_time flag
-    if military_time:
-        hours = now.hour
-        am_pm = ""
-    else:
-        hours = int(now.strftime("%I"))  # 12-hour format
-        am_pm = now.strftime("%p")  # AM/PM designator
+    hours = now.hour if military_time else int(now.strftime("%I"))  # 12-hour format
+    am_pm = "" if military_time else now.strftime("%p")  # AM/PM designator
 
     minutes = int(now.strftime("%M"))
     seconds = int(now.strftime("%S")) if show_seconds else None
@@ -317,23 +309,20 @@ def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
     """
 
     pixel_buffer = []
-
-    # Create a mapping for each element to its binary representation
     for element in elements:
-        if isinstance(element, str):  # Handle string components
-            # Map specific string characters to their binary representations
-            if element == ":":
-                pixel_buffer.append(list(COLON))
-            elif element == " ":
-                pixel_buffer.append(list(SPACE))
-            elif element == "A":
-                pixel_buffer.append(list(LETTER_A))
-            elif element == "P":
-                pixel_buffer.append(list(LETTER_P))
-            elif element == "M":
-                pixel_buffer.append(list(LETTER_M))
+        if isinstance(element, str):
+            pixel_buffer.append(
+                list(
+                    {
+                        ":": COLON,
+                        " ": SPACE,
+                        "A": LETTER_A,
+                        "P": LETTER_P,
+                        "M": LETTER_M,
+                    }[element]
+                )
+            )
         else:
-            # Map digit integers to their binary representations
             pixel_buffer.append(list(DIGIT[element]))
 
     return pixel_buffer
