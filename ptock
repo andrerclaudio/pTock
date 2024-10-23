@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 # Built-in libraries
+import os
 import argparse
 import subprocess
 from random import randint
@@ -72,6 +73,9 @@ def ptock(
     Returns:
         None: This function does not return any value; it runs the clock application directly.
     """
+
+    # Ensure TERM is set to xterm-256color for proper color support
+    os.environ["TERM"] = "xterm-256color"
 
     # Get system timezone dynamically
     system_timezone = get_system_timezone()
