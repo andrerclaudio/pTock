@@ -3,6 +3,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import threading
 import sys
+from time import sleep
 from typing import Optional, Callable
 
 
@@ -42,21 +43,21 @@ class Quartz(threading.Thread):
         and calls the `update` function with it every second until the thread is stopped.
         """
         try:
-            last_timestamp = datetime.now(
-                tz=self.timezone_info
-            ).timestamp()  # Store the last timestamp
+            last_timestamp = int(0)  # Init the variable
 
-            while not self._stop_event.wait(
-                timeout=0.1
-            ):  # Wait for stop event with timeout
+            while True:  # Loop forever
 
                 current_time = datetime.now(tz=self.timezone_info)  # Get current time
-                current_timestamp = current_time.timestamp()  # Get current timestamp
+                current_timestamp = int(
+                    current_time.timestamp()
+                )  # Get current timestamp
 
                 # Call update if the timestamp has changed since last check
                 if current_timestamp != last_timestamp:
                     self.update_callback(current_time)  # Update display with new time
                     last_timestamp = current_timestamp  # Update last timestamp
+                # Sleep until next check
+                sleep(0.1)
 
         except threading.ThreadError as error:
             sys.exit(1)  # Exit program in case of a threading error
