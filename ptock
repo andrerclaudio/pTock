@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# Buit-in libraries
-#
+# Built-in libraries
 import argparse
 from zoneinfo import ZoneInfo
 
 # Custom-made libraries
-#
 from view import ViewConnector
 
 
@@ -16,16 +14,16 @@ def ptock(
     y: int = 0,
     width: int = 2,
     height: int = 1,
-    second: bool = False,
-    military: bool = False,
-    center: bool = False,
-    color: int = 2,
+    show_seconds: bool = False,
+    military_time: bool = False,
+    center_clock: bool = False,
+    color_code: int = 2,
 ) -> None:
     """
     Starts a digital clock with specified settings in the terminal.
 
     This function initializes and runs a digital clock display with customizable
-    parameters such as position, size, time format, and color. The clock can
+    parameters such as position, size and color. The clock can
     be configured to show seconds and to use either 12-hour or military (24-hour)
     time format.
 
@@ -34,17 +32,17 @@ def ptock(
         y (int): Vertical 0-indexed position of the top-left corner of the clock.
         width (int): Font width in characters per tile.
         height (int): Font height in characters per tile.
-        second (bool): Flag indicating whether to display seconds. Defaults to False.
-        military (bool): Flag indicating whether to display military (24-hour) time. Defaults to False.
-        center (bool): Flag indicating whether to center the clock in the terminal. Defaults to False.
-        color (int): Color code for displaying the clock. Defaults to 2.
+        show_seconds (bool): Flag indicating whether to display seconds. Defaults to False.
+        military_time (bool): Flag indicating whether to display military (24-hour) time. Defaults to False.
+        center_clock (bool): Flag indicating whether to center the clock in the terminal. Defaults to False.
+        color_code (int): Color code for displaying the clock. Defaults to 2.
 
     Returns:
         None: This function does not return any value; it runs the clock application directly.
     """
 
     # Set the timezone to Buenos Aires, Argentina
-    tz = ZoneInfo("America/Argentina/Buenos_Aires")
+    timezone = ZoneInfo("America/Argentina/Buenos_Aires")
 
     # Create an instance of ViewConnector with the provided settings
     clock = ViewConnector(
@@ -52,11 +50,11 @@ def ptock(
         y=y,  # Vertical position
         width=width,  # Width of the clock tiles
         height=height,  # Height of the clock tiles
-        second=second,  # Display seconds or not
-        military=military,  # Use 24-hour format or not
-        center=center,  # Center the clock or use custom positioning
-        color=color,  # Color setting for the clock
-        timezone=tz,  # Timezone for the clock
+        second=show_seconds,  # Display seconds or not
+        military=military_time,  # Use 24-hour format or not
+        center=center_clock,  # Center the clock or use custom positioning
+        color=color_code,  # Color setting for the clock
+        timezone=timezone,  # Timezone for the clock
     )
 
     # Run the clock application
@@ -71,11 +69,12 @@ class CustomHelpFormatter(argparse.HelpFormatter):
     def _format_action_invocation(self, action):
         """Format the invocation of an action (argument)."""
         if not action.option_strings:
-            # Default formatting for positional arguments
-            return super()._format_action_invocation(action)
+            return super()._format_action_invocation(
+                action
+            )  # Default formatting for positional arguments
 
-        # Customize for optional arguments
         option_string = ", ".join(action.option_strings)
+
         if action.nargs != 0:
             metavar = self._format_args(action, action.dest.upper())
             return f"{option_string} <{metavar}>"
@@ -99,9 +98,9 @@ if __name__ == "__main__":
     """
     Entry point for the script when run as the main module.
 
-    Parses the command-line arguments for the horizontal and vertical position,
-    font dimensions, display settings, and then calls the ptock function to start the
-    application.
+    Parses command-line arguments for horizontal and vertical position,
+    font dimensions, display settings, and then calls the ptock function
+    to start the application.
     """
 
     parser = argparse.ArgumentParser(
@@ -118,6 +117,7 @@ if __name__ == "__main__":
         default=0,
         help="Horizontal 0-indexed position of top-left corner [default: 0]",
     )
+
     parser.add_argument(
         "-y",
         "--y",
@@ -125,6 +125,7 @@ if __name__ == "__main__":
         default=0,
         help="Vertical 0-indexed position of top-left corner [default: 0]",
     )
+
     parser.add_argument(
         "-W",
         "--width",
@@ -132,6 +133,7 @@ if __name__ == "__main__":
         default=2,
         help="Font width in characters per tile [default: 2]",
     )
+
     parser.add_argument(
         "-H",
         "--height",
@@ -139,16 +141,20 @@ if __name__ == "__main__":
         default=1,
         help="Font height in characters per tile [default: 1]",
     )
+
     parser.add_argument("-s", "--second", action="store_true", help="Display seconds")
+
     parser.add_argument(
         "-m", "--military", action="store_true", help="Display military (24-hour) time"
     )
+
     parser.add_argument(
         "-c",
         "--center",
         action="store_true",
         help="Center the clock in the terminal. Overrides manual positioning",
     )
+
     parser.add_argument(
         "-C",
         "--color",
@@ -158,10 +164,10 @@ if __name__ == "__main__":
         "1-red, 2-green, 3-yellow, 4-blue, 5-magenta, 6-cyan, 7-white and 0-black",
     )
 
-    # Parse the command-line arguments
+    # Parse command-line arguments
     args = parser.parse_args()
 
-    # Start the main application with the parsed arguments
+    # Start the main application with parsed arguments
     ptock(
         args.x,
         args.y,
