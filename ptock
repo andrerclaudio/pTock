@@ -3,10 +3,41 @@
 
 # Built-in libraries
 import argparse
+import subprocess
 from zoneinfo import ZoneInfo
 
 # Custom-made libraries
 from view import ViewConnector
+
+
+def get_system_timezone() -> str:
+    """
+    Retrieves the system's current timezone using the 'timedatectl' command.
+
+    This function executes the 'timedatectl' command, which provides system time
+    information, and parses its output to extract the active timezone. If the timezone
+    cannot be determined (e.g., due to a missing command or parsing error), it falls back to UTC.
+
+    Returns:
+        str: The system's current timezone as a string (e.g., "America/New_York").
+             Returns "UTC" if the timezone cannot be determined.
+    """
+    try:
+        # Run the 'timedatectl' command and capture the output
+        result = subprocess.run(["timedatectl"], stdout=subprocess.PIPE, text=True)
+
+        # Iterate over each line of the output
+        for line in result.stdout.splitlines():
+            # Look for the line that contains 'Time zone'
+            if "Time zone" in line:
+                # Extract and return the timezone part of the line
+                return line.split(":")[1].strip().split(" ")[0]
+    except Exception as e:
+        # Problem fetching the Timezone information
+        pass
+
+    # Return 'UTC' as a fallback in case of an error
+    return "UTC"
 
 
 def ptock(
@@ -41,8 +72,11 @@ def ptock(
         None: This function does not return any value; it runs the clock application directly.
     """
 
+    # Get system timezone dynamically
+    system_timezone = get_system_timezone()
+
     # Set the timezone to Buenos Aires, Argentina
-    timezone = ZoneInfo("America/Argentina/Buenos_Aires")
+    timezone = ZoneInfo(system_timezone)
 
     # Create an instance of ViewConnector with the provided settings
     clock = ViewConnector(
