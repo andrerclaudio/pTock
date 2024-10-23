@@ -248,8 +248,8 @@ class ViewConnector:
                 if curses.is_term_resized(self.__screen_height, self.__screen_width):
                     self.__handle_resize()
 
-                # Exit condition when 'q' is pressed
-                if key == ord("q"):
+                # Exit condition when 'q' or 'ESC' is pressed
+                if key == ord("q") or key == 27:  # 27 is the ASCII code for ESC
                     break
 
         except KeyboardInterrupt:

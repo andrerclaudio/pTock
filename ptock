@@ -4,6 +4,7 @@
 # Built-in libraries
 import argparse
 import subprocess
+from random import randint
 from zoneinfo import ZoneInfo
 
 # Custom-made libraries
@@ -41,6 +42,7 @@ def get_system_timezone() -> str:
 
 
 def ptock(
+    color_code,
     x: int = 0,
     y: int = 0,
     width: int = 2,
@@ -48,7 +50,6 @@ def ptock(
     show_seconds: bool = False,
     military_time: bool = False,
     center_clock: bool = False,
-    color_code: int = 2,
 ) -> None:
     """
     Starts a digital clock with specified settings in the terminal.
@@ -59,6 +60,7 @@ def ptock(
     time format.
 
     Args:
+        color_code (int): Color code for displaying the clock. Defaults to a random value from 1 to 7.
         x (int): Horizontal 0-indexed position of the top-left corner of the clock.
         y (int): Vertical 0-indexed position of the top-left corner of the clock.
         width (int): Font width in characters per tile.
@@ -66,7 +68,6 @@ def ptock(
         show_seconds (bool): Flag indicating whether to display seconds. Defaults to False.
         military_time (bool): Flag indicating whether to display military (24-hour) time. Defaults to False.
         center_clock (bool): Flag indicating whether to center the clock in the terminal. Defaults to False.
-        color_code (int): Color code for displaying the clock. Defaults to 2.
 
     Returns:
         None: This function does not return any value; it runs the clock application directly.
@@ -87,7 +88,9 @@ def ptock(
         show_seconds=show_seconds,  # Display seconds or not
         military_time=military_time,  # Use 24-hour format or not
         center=center_clock,  # Center the clock or use custom positioning
-        color=color_code,  # Color setting for the clock
+        color=(
+            color_code if color_code else randint(1, 7)
+        ),  # Color setting for the clock
         timezone=timezone,  # Timezone for the clock
     )
 
@@ -193,8 +196,8 @@ if __name__ == "__main__":
         "-C",
         "--color",
         type=int,
-        default=2,
-        help="Change the color of the time [default: 2]. The options are: "
+        required=False,
+        help="Change the color of the time [not required]. The options are: "
         "1-red, 2-green, 3-yellow, 4-blue, 5-magenta, 6-cyan, 7-white and 0-black",
     )
 
@@ -203,12 +206,12 @@ if __name__ == "__main__":
 
     # Start the main application with parsed arguments
     ptock(
-        args.x,
-        args.y,
-        args.width,
-        args.height,
-        args.second,
-        args.military,
-        args.center,
         args.color,
+        x=args.x,
+        y=args.y,
+        width=args.width,
+        height=args.height,
+        show_seconds=args.second,
+        military_time=args.military,
+        center_clock=args.center,
     )
