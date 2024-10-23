@@ -1,5 +1,4 @@
-# Buit-in libraries
-#
+# Built-in libraries
 import curses
 from enum import Enum
 from zoneinfo import ZoneInfo
@@ -7,7 +6,6 @@ import sys
 from datetime import datetime
 
 # Custom-made libraries
-#
 from mechanism import Quartz
 from font import (
     DIGIT,
@@ -22,7 +20,7 @@ from font import (
 
 
 class PixelColor(Enum):
-    """Enumeration of pixel colors."""
+    """Enumeration of pixel colors used in the display."""
 
     BLACK = 8
     BLUE = 4
@@ -43,118 +41,135 @@ class ViewConnector:
         y: int = 0,
         width: int = 2,
         height: int = 1,
-        second: bool = False,
-        military: bool = False,
+        show_seconds: bool = False,
+        military_time: bool = False,
         center: bool = False,
         color: int = 2,
         timezone: ZoneInfo = None,
     ) -> None:
+        """
+        Initialize the ViewConnector with display settings.
+
+        Args:
+            x (int): Horizontal position of the top-left corner of the clock.
+            y (int): Vertical position of the top-left corner of the clock.
+            width (int): Width of each digit in characters.
+            height (int): Height of each digit in characters.
+            show_seconds (bool): Flag to indicate if seconds should be displayed.
+            military_time (bool): Flag to indicate if military time format should be used.
+            center (bool): Flag to indicate if the clock should be centered.
+            color (int): Color code for pixel color.
+            timezone (ZoneInfo): Timezone for the clock display.
+        """
+
         self.top_left_x = x
         self.top_left_y = y
         self.tiles_per_pixel_width = width
         self.tiles_per_pixel_height = height
-        self.show_seconds = second
-        self.military_time = military
+        self.show_seconds = show_seconds
+        self.military_time = military_time
         self.align_to_center = center
+
+        # Validate and set pixel color; default to green if out of range
         self.pixel_color = (
             color
             if PixelColor.RED.value <= color <= PixelColor.BLACK.value
             else PixelColor.GREEN.value
         )
+
         self.tz_info: ZoneInfo = timezone
         self.stdscr: curses.window = None
-        self.screen_height: int = 0
-        self.screen_width: int = 0
-        self.pixel_buffer: dict = {}
+        self.__screen_height: int = 0
+        self.__screen_width: int = 0
+        self.__pixel_buffer: dict = {}
 
-    def __draw_pixel(self, pixel: str, x: int = 0, y: int = 0) -> None:
-        """Draw a pixel at the specified (x, y) coordinates."""
+    def __draw_pixel(self, pixel: str, x: int, y: int) -> None:
+        """Draw a pixel at specified coordinates.
+
+        Args:
+            pixel (str): The pixel value ('1' for filled, '0' for empty).
+            x (int): The x-coordinate for drawing.
+            y (int): The y-coordinate for drawing.
+        """
+
         color_pair = curses.color_pair(self.pixel_color)
         key = f"{x}:{y}"
 
-        # Check if the pixel is already in the buffer and if it's the same
-        if key not in self.pixel_buffer or self.pixel_buffer[key] != pixel:
-            self.pixel_buffer[key] = pixel  # Save the pixel in the buffer
+        # Check if the pixel is already in the buffer and if it's different from the current one
+        if key not in self.__pixel_buffer or self.__pixel_buffer[key] != pixel:
+            self.__pixel_buffer[key] = pixel  # Save the current pixel state
+
             try:
-                # Use '█' for pixel '1' and space for '0'
+                # Use '█' for filled pixels and space for empty ones
                 self.stdscr.addch(y, x, "█" if pixel == "1" else " ", color_pair)
-            except curses.error as e:
-                # Remove the pixel from buffer if drawing fails
-                self.pixel_buffer.pop(key, None)
+            except curses.error:
+                # Remove from buffer if drawing fails due to terminal constraints
+                self.__pixel_buffer.pop(key, None)
 
     @staticmethod
     def __colors_init() -> None:
-        """Initialize the color system for use in the terminal."""
-        curses.initscr()  # Initialize the curses mode
+        """Initialize color settings for terminal display."""
+
+        curses.initscr()  # Initialize curses mode
         curses.start_color()  # Enable color functionality
+
+        # Initialize default colors for use in the application
         curses.use_default_colors()
 
-        # Initialize color pairs
+        # Initialize color pairs based on PixelColor enum values
         for color in PixelColor:
             curses.init_pair(color.value, getattr(curses, f"COLOR_{color.name}"), -1)
 
-    def __interpolate(
-        self,
-        symbols: list,
-    ) -> None:
-        """Interpolates a grid of symbols into pixels on a display.
+    def __interpolate(self, symbols: list) -> None:
+        """Draw a grid of symbols onto the display.
 
         Args:
-            symbols (list): A list of symbol slices to be drawn.
+            symbols (list): A list of symbol slices representing digits and separators.
         """
 
         # Initialize starting position for drawing
         last_column_position = self.top_left_x
 
-        # Iterate through each symbol slice
+        # Iterate through each symbol slice to draw on screen
         for symbol_slice in symbols:
-            current_line_position = (
-                self.top_left_y
-            )  # Reset vertical position for each slice
+            current_line_position = self.top_left_y
 
-            # Iterate over the height of the symbol
+            # Iterate over the height of the symbol representation
             for row in range(SHAPE_HEIGHT):
-                column_position = (
-                    last_column_position  # Start from the left for each row
-                )
+                column_position = last_column_position
 
-                # Iterate over the width of the symbol
+                # Iterate over the width of the symbol representation
                 for col in range(SHAPE_WIDTH):
-                    pixel_value = symbol_slice.pop(0)  # Get the next pixel value
+                    pixel_value = symbol_slice.pop(0)  # Get next pixel value
 
-                    # Draw tiles for this pixel
+                    # Draw tiles based on pixel value and dimensions specified by user settings
                     for tile_row in range(self.tiles_per_pixel_height):
                         for tile_col in range(self.tiles_per_pixel_width):
                             self.__draw_pixel(
                                 pixel=pixel_value,
-                                x=(column_position + tile_col),  # Calculate x position
-                                y=(
-                                    current_line_position + tile_row
-                                ),  # Calculate y position
+                                x=(column_position + tile_col),
+                                y=(current_line_position + tile_row),
                             )
 
-                    column_position += self.tiles_per_pixel_width  # Move to next column
+                    column_position += self.tiles_per_pixel_width
 
-                current_line_position += self.tiles_per_pixel_height  # Move to next row
+                current_line_position += self.tiles_per_pixel_height
 
             last_column_position += (
                 SHAPE_WIDTH * self.tiles_per_pixel_width
-                + self.tiles_per_pixel_width  # Move to next slice
+                + self.tiles_per_pixel_width  # Space between symbols
             )
 
-        self.stdscr.refresh()  # Refresh display to show changes
+        self.stdscr.refresh()  # Refresh display to show drawn pixels
 
     def __calculate_center_xy_position(self) -> None:
-        """ """
+        """Calculate and adjust top-left position to center the clock on screen."""
 
         clock_digits_count = (
-            #
-            5
-            + (3 if self.show_seconds else 0)
-            + (3 if not self.military_time else 0)
+            5 + (3 if self.show_seconds else 0) + (3 if not self.military_time else 0)
         )
 
-        # Calculate dimensions for centering
+        # Calculate dimensions needed for centering based on shape sizes and user settings
         pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
         pixel_width = SHAPE_WIDTH * self.tiles_per_pixel_width
 
@@ -163,23 +178,24 @@ class ViewConnector:
             + (clock_digits_count - 1) * self.tiles_per_pixel_width
         )
 
-        # Centering calculations
-        self.top_left_y = round((self.screen_height - pixel_height) / 2)
-        self.top_left_x = round((self.screen_width - total_length_with_spaces) / 2)
+        # Centering calculations based on available screen dimensions
+        self.top_left_y = round((self.__screen_height - pixel_height) / 2)
+        self.top_left_x = round((self.__screen_width - total_length_with_spaces) / 2)
 
     def __check_fit(self) -> bool:
-        """Check if the clock can fit within the available screen space and given passed parameters."""
+        """Check if the clock fits within available screen space.
+
+        Returns:
+            bool: True if it fits, False otherwise.
+        """
 
         pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
 
-        if (self.screen_height - self.top_left_y) < pixel_height:
+        if (self.__screen_height - self.top_left_y) < pixel_height:
             return False
 
         clock_digits_count = (
-            #
-            5
-            + (3 if self.show_seconds else 0)
-            + (3 if not self.military_time else 0)
+            5 + (3 if self.show_seconds else 0) + (3 if not self.military_time else 0)
         )
 
         pixel_width = SHAPE_WIDTH * self.tiles_per_pixel_width
@@ -191,155 +207,149 @@ class ViewConnector:
 
         return (
             True
-            if (self.screen_width - self.top_left_x) >= total_length_with_spaces
+            if (self.__screen_width - self.top_left_x) >= total_length_with_spaces
             else False
         )
 
     def __handle_resize(self):
-        """Handle window resizing and adjust content accordingly."""
-        self.screen_height, self.screen_width = self.stdscr.getmaxyx()
+        """Handle terminal resizing events and adjust content accordingly."""
+
+        # Update screen dimensions based on current window size
+        self.__screen_height, self.__screen_width = self.stdscr.getmaxyx()
 
         if self.align_to_center:
             self.__calculate_center_xy_position()
 
         if not self.__check_fit():
-            sys.exit(1)
+            sys.exit(1)  # Exit if clock does not fit in resized window
 
         self.stdscr.clear()
-        # Redraw screen content as needed
-        # Clear the pixel buffer in order to reset previous positions
-        self.pixel_buffer: dict = {}
+        # Clear previous content and reset buffer
+        self.__pixel_buffer.clear()
 
     def __application(self, stdscr: curses.window) -> None:
-        """Main application logic."""
+        """Main application logic that runs within curses environment."""
+
         self.stdscr = stdscr
         self.__handle_resize()
 
-        # Initialize clock and other resources
+        # Initialize colors and cursor visibility settings
         self.__colors_init()
         curses.curs_set(0)
+
+        # Create an instance of Quartz to manage time updates
         self.clock = Quartz(self.update, timezone=self.tz_info)
 
         try:
             while True:
                 key = self.stdscr.getch()
 
-                # Handle resize event if terminal is resized
-                if curses.is_term_resized(self.screen_height, self.screen_width):
+                # Handle terminal resize events
+                if curses.is_term_resized(self.__screen_height, self.__screen_width):
                     self.__handle_resize()
 
-                # Exit condition (for example, press 'q' to quit)
+                # Exit condition when 'q' is pressed
                 if key == ord("q"):
                     break
 
         except KeyboardInterrupt:
-            # Gracefully handle Ctrl+C (SIGINT)
-            pass
+            pass  # Gracefully handle Ctrl+C
 
         finally:
+            # Clean up before exiting application
             self.stdscr.clear()
             if hasattr(self, "clock"):
                 self.clock.stop()
-            sys.exit(0)  # Exit with a status code of 0 (success)
+            sys.exit(0)
 
     def update(self, current_time: datetime) -> None:
-        """Update screen by drawing a pixel without clearing previous content."""
+        """Update screen with current time representation.
 
-        time_components: list = datetime_slicer(
+        Args:
+            current_time (datetime): The current time to be displayed on screen.
+        """
+
+        time_components: list[int | str] = datetime_slicer(
             now=current_time,
             show_seconds=self.show_seconds,
             military_time=self.military_time,
         )
-        symbol_mappings: list = map_to_symbols(time_components)
+
+        symbol_mappings: list[list[str]] = map_to_symbols(time_components)
+
+        # Interpolate symbols into pixels for display
         self.__interpolate(symbols=symbol_mappings)
 
     def run(self) -> None:
-        """Run the curses application."""
+        """Run the curses application within a wrapper."""
 
         try:
             curses.wrapper(self.__application)
 
-        except curses.error as e:
+        except curses.error:
             sys.exit(1)
 
 
 def datetime_slicer(
     now: datetime, show_seconds: bool = False, military_time: bool = False
-) -> list[int]:
-    """Slice the current datetime into its individual components.
-
-    This function takes a datetime object and extracts the hour, minute,
-    and second components along with AM/PM designation if required. It
-    returns a list containing each component as an integer, formatted with
-    colons, and may include AM/PM if not using military time.
+) -> list[int | str]:
+    """Slice current datetime into individual components.
 
     Args:
-        now (datetime): The current datetime to be sliced.
-        show_seconds (bool): Flag indicating whether to include seconds in output. Defaults to False.
-        military_time (bool): Flag indicating whether to use military time (24-hour format). Defaults to False.
+        now (datetime): Current datetime object to be sliced.
+        show_seconds (bool): Flag indicating whether to include seconds. Defaults to False.
+        military_time (bool): Flag indicating whether to use military time format. Defaults to False.
 
     Returns:
-        list[int]: A list containing the tens and units of hours, minutes,
-                    and seconds, interspersed with string colons.
-                    Example: [hour_tens, hour_units, ":", minute_tens,
-                    minute_units, ":", second_tens, second_units]
+        list[int | str]: A list containing hour, minute, second components along with separators.
     """
 
-    # Determine hour format based on military_time flag
-    hours = now.hour if military_time else int(now.strftime("%I"))  # 12-hour format
-    am_pm = "" if military_time else now.strftime("%p")  # AM/PM designator
+    hours = now.hour if military_time else int(now.strftime("%I"))
+    am_pm_indicator = "" if military_time else now.strftime("%p")
 
     minutes = int(now.strftime("%M"))
-    seconds = int(now.strftime("%S")) if show_seconds else None
+    seconds_value: Optional[int] = int(now.strftime("%S")) if show_seconds else None
 
     # Prepare the output list
-    output = [
-        hours // 10,  # Tens place of hours
-        hours % 10,  # Units place of hours
-        ":",  # Separator for time components
-        minutes // 10,  # Tens place of minutes
-        minutes % 10,  # Units place of minutes
+    output_list: list[int | str] = [
+        hours // 10,
+        hours % 10,
+        ":",
+        minutes // 10,
+        minutes % 10,
     ]
 
-    # Include seconds and AM/PM if necessary
     if show_seconds:
-        output.extend(
+        output_list.extend(
             [
-                ":",  # Separator for seconds
-                seconds // 10,  # Tens place of seconds
-                seconds % 10,  # Units place of seconds
+                ":",
+                seconds_value // 10,
+                seconds_value % 10,
             ]
         )
 
     if not military_time:
-        output.append(" ")  # Space before AM/PM indicator
-        output.extend(list(am_pm))  # Add AM/PM indicator
+        output_list.append(" ")
+        output_list.extend(list(am_pm_indicator))
 
-    return output
+    return output_list
 
 
 def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
-    """Map time slices to their corresponding binary string representations.
-
-    This function takes a list of time components (digits and colons)
-    and converts each component into its binary string representation
-    using predefined mappings. The output is a pixel buffer where each
-    element is represented as a list of strings.
+    """Map time components to their binary string representations.
 
     Args:
-        elements (list[int | str]): A list containing integers (0-9)
-                                     representing digits and strings
-                                     for colons, spaces, AM, and PM.
+        elements (list[int | str]): A list containing integers and strings representing time components.
 
     Returns:
-        list[list[str]]: A nested list where each inner list represents
-                          the binary string of a corresponding time component.
+        list[list[str]]: A nested list where each inner list represents a binary string of a time component.
     """
 
-    pixel_buffer = []
+    pixel_buffer_output: list[list[str]] = []
+
     for element in elements:
         if isinstance(element, str):
-            pixel_buffer.append(
+            pixel_buffer_output.append(
                 list(
                     {
                         ":": COLON,
@@ -351,6 +361,6 @@ def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
                 )
             )
         else:
-            pixel_buffer.append(list(DIGIT[element]))
+            pixel_buffer_output.append(list(DIGIT[element]))
 
-    return pixel_buffer
+    return pixel_buffer_output

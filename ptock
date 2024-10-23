@@ -50,8 +50,8 @@ def ptock(
         y=y,  # Vertical position
         width=width,  # Width of the clock tiles
         height=height,  # Height of the clock tiles
-        second=show_seconds,  # Display seconds or not
-        military=military_time,  # Use 24-hour format or not
+        show_seconds=show_seconds,  # Display seconds or not
+        military_time=military_time,  # Use 24-hour format or not
         center=center_clock,  # Center the clock or use custom positioning
         color=color_code,  # Color setting for the clock
         timezone=timezone,  # Timezone for the clock

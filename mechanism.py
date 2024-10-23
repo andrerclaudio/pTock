@@ -32,7 +32,7 @@ class Quartz(threading.Thread):
         self.timezone_info = timezone or ZoneInfo(
             "UTC"
         )  # Default to UTC if no timezone is provided
-        self._stop_event = threading.Event()
+        self.__stop_event = threading.Event()
         self.start()  # Start the thread upon initialization
 
     def run(self) -> None:
@@ -64,4 +64,4 @@ class Quartz(threading.Thread):
 
     def stop(self) -> None:
         """Stops the Quartz thread by setting the stop event."""
-        self._stop_event.set()  # Signal the thread to stop
+        self.__stop_event.set()  # Signal the thread to stop
