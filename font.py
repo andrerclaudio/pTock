@@ -50,7 +50,7 @@ LETTER_P: str = "111101111100100"
 LETTER_M: str = "101111101101101"
 
 # Bitmap digits from '0' - '9'.
-DIGIT: str = [
+DIGIT: list = [
     # xxx
     # x.x
     # x.x

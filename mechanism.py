@@ -8,56 +8,59 @@ from typing import Optional, Callable
 
 class Quartz(threading.Thread):
     """
-    A thread that periodically updates the screen with a timestamp, similar to
-    a clock mechanism.
+    A thread that periodically updates the screen with the current timestamp, functioning like a clock.
 
-    This thread fetches the current timestamp every second, optionally using a specified timezone,
-    and invokes the provided `update` method to refresh the screen until stopped.
+    This thread retrieves the current timestamp every second, using a specified timezone if provided,
+    and invokes the supplied `update` method to refresh the display until it is stopped.
     """
 
     def __init__(
-        self, update: Callable[[datetime], None], tz: Optional[ZoneInfo] = None
+        self, update: Callable[[datetime], None], timezone: Optional[ZoneInfo] = None
     ) -> None:
         """
         Initialize the Quartz thread.
 
         Args:
-            update (Callable[[datetime], None]): Function to call with datetime object to update the screen.
-            tz (Optional[ZoneInfo]): Timezone to use for timestamps. Defaults to the local timezone.
+            update (Callable[[datetime], None]): A callback function that takes a datetime object
+                                                  to update the screen display.
+            timezone (Optional[ZoneInfo]): The timezone to be used for timestamps. Defaults to UTC
+                                            if no timezone is specified.
         """
         super().__init__(name="QuartzClock", daemon=True)
-        self.update = update
-        self.tz_info = tz or ZoneInfo(
+        self.update_callback = update
+        self.timezone_info = timezone or ZoneInfo(
             "UTC"
         )  # Default to UTC if no timezone is provided
-        self.__stop_event = threading.Event()
-        self.start()
+        self._stop_event = threading.Event()
+        self.start()  # Start the thread upon initialization
 
     def run(self) -> None:
         """
-        Main loop of the Quartz thread.
+        The main loop of the Quartz thread.
 
-        Continuously fetches the current system timestamp, respects the provided timezone (or defaults to
-        UTC), and calls the `update` function with it every second until stopped.
+        Continuously fetches the current timestamp based on the provided timezone (or defaults to UTC),
+        and calls the `update` function with it every second until the thread is stopped.
         """
         try:
+            last_timestamp = datetime.now(
+                tz=self.timezone_info
+            ).timestamp()  # Store the last timestamp
 
-            past_timestamp = datetime.now(tz=self.tz_info).timestamp()
+            while not self._stop_event.wait(
+                timeout=0.1
+            ):  # Wait for stop event with timeout
 
-            while not self.__stop_event.wait(timeout=0.1):
+                current_time = datetime.now(tz=self.timezone_info)  # Get current time
+                current_timestamp = current_time.timestamp()  # Get current timestamp
 
-                now = datetime.now(tz=self.tz_info)
-                current_timestamp = now.timestamp()
+                # Call update if the timestamp has changed since last check
+                if current_timestamp != last_timestamp:
+                    self.update_callback(current_time)  # Update display with new time
+                    last_timestamp = current_timestamp  # Update last timestamp
 
-                # Call update if time has changed
-                if current_timestamp != past_timestamp:
-
-                    self.update(now)
-                    past_timestamp = current_timestamp
-
-        except threading.ThreadError as e:
-            sys.exit(1)  # Exit the program in case of an error
+        except threading.ThreadError as error:
+            sys.exit(1)  # Exit program in case of a threading error
 
     def stop(self) -> None:
         """Stops the Quartz thread by setting the stop event."""
-        self.__stop_event.set()
+        self._stop_event.set()  # Signal the thread to stop

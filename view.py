@@ -3,7 +3,7 @@
 import curses
 from enum import Enum
 from zoneinfo import ZoneInfo
-import sys, signal
+import sys
 from datetime import datetime
 
 # Custom-made libraries
@@ -207,7 +207,7 @@ class ViewConnector:
 
         self.stdscr.clear()
         # Redraw screen content as needed
-        # Clear the pixel buffer in order to reset previus positions
+        # Clear the pixel buffer in order to reset previous positions
         self.pixel_buffer: dict = {}
 
     def __application(self, stdscr: curses.window) -> None:
@@ -218,7 +218,7 @@ class ViewConnector:
         # Initialize clock and other resources
         self.__colors_init()
         curses.curs_set(0)
-        self.clock = Quartz(self.update, tz=self.tz_info)
+        self.clock = Quartz(self.update, timezone=self.tz_info)
 
         try:
             while True:
