@@ -19,15 +19,14 @@ Note: emulating all the features of tty-clock and tock is **not** a goal of this
 
 ## Installation and Dependencies
 
-1. The only requirement is to have Python 3 installed and the basic core libraries..
+1. The only requirement is to have Python 3 installed and the basic core libraries.
 
-2. Since it is not yet an official Python 3 library, you need to clone this repository and run the script as follows:
+2. 
 
-3. You don’t need to use the python3 prefix because the script is extensionless and will inform the shell what it needs to execute.
+3. 
 
 ```sh
-cd folder/you/clonned/this/repository
-./ptock
+
 ```
 
 ## Usage

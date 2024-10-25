@@ -6,8 +6,8 @@ import sys
 from datetime import datetime
 
 # Custom-made libraries
-from mechanism import Quartz
-from font import (
+from .mechanism import Quartz
+from .font import (
     DIGIT,
     COLON,
     SHAPE_HEIGHT,

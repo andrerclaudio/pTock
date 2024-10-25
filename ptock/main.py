@@ -9,7 +9,7 @@ from random import randint
 from zoneinfo import ZoneInfo
 
 # Custom-made libraries
-from view import ViewConnector
+from .view import ViewConnector
 
 
 def get_system_timezone() -> str:
@@ -43,7 +43,7 @@ def get_system_timezone() -> str:
 
 
 def ptock(
-    color_code,
+    color_code=None,
     x: int = 0,
     y: int = 0,
     width: int = 2,
@@ -93,7 +93,7 @@ def ptock(
         military_time=military_time,  # Use 24-hour format or not
         center=center_clock,  # Center the clock or use custom positioning
         color=(
-            color_code if color_code else randint(1, 7)
+            randint(1, 7) if not color_code else color_code
         ),  # Color setting for the clock
         timezone=timezone,  # Timezone for the clock
     )
@@ -135,7 +135,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):
         return super().start_section(heading)
 
 
-if __name__ == "__main__":
+def main():
     """
     Entry point for the script when run as the main module.
 
