@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python3-ptock"
+version = "1.1.0"
+description = "A digital clock made in Python for the terminal, inspired by tty-clock and tock."
+authors = [{ name = "Andre Ribeiro", email = "andre.ribeiro.srs@gmail.com" }]
+license = { text = "MIT" }
+readme = "README.md"
+keywords = ["digital clock", "terminal", "tty-clock", "tock"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Linux",
+]
+
+[project.scripts]
+ptock = "ptock.main:main"  # Ensure this points to your main function

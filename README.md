@@ -21,12 +21,14 @@ Note: emulating all the features of tty-clock and tock is **not** a goal of this
 
 1. The only requirement is to have Python 3 installed and the basic core libraries.
 
-2. 
-
-3. 
+2. It is already available in PyPi, so you only need to run pip to intall and ptock to start the clock, as below:
 
 ```sh
+pip install python3-ptock
+```
 
+```sh
+ptock -h
 ```
 
 ## Usage
