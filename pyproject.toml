@@ -9,12 +9,17 @@ description = "A digital clock made in Python for the terminal, inspired by tty-
 authors = [{ name = "Andre Ribeiro", email = "andre.ribeiro.srs@gmail.com" }]
 license = { text = "MIT" }
 readme = "README.md"
+requires-python = ">=3.12.7"
 keywords = ["digital clock", "terminal", "tty-clock", "tock"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: POSIX :: Linux",
+    "Operating System :: OS Independent",
 ]
 
 [project.scripts]
 ptock = "ptock.main:main"  # Ensure this points to your main function
+
+[project.urls]
+Homepage = "https://github.com/andrerclaudio/python3-ptock"
+Issues = "https://github.com/andrerclaudio/python3-ptock/issues"
