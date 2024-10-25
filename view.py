@@ -79,9 +79,14 @@ class ViewConnector:
 
         self.tz_info: ZoneInfo = timezone
         self.stdscr: curses.window = None
+        self.__clock_digits_qty = (
+            5 + (3 if self.show_seconds else 0) + (3 if not self.military_time else 0)
+        )
         self.__screen_height: int = 0
         self.__screen_width: int = 0
         self.__pixel_buffer: dict = {}
+        self.__digit_buffer: list = [" " for i in range(self.__clock_digits_qty)]
+        self.__top_corners: dict = {}
 
     def __draw_pixel(self, pixel: str, x: int, y: int) -> None:
         """Draw a pixel at specified coordinates.
@@ -120,67 +125,89 @@ class ViewConnector:
         for color in PixelColor:
             curses.init_pair(color.value, getattr(curses, f"COLOR_{color.name}"), -1)
 
-    def __interpolate(self, symbols: list) -> None:
-        """Draw a grid of symbols onto the display.
+    def __interpolate(self, time_components: list[int | str]) -> None:
+        """
+        Draws a grid of symbols onto the display, updating only digits that have changed.
 
         Args:
-            symbols (list): A list of symbol slices representing digits and separators.
+            time_components (list[int | str]): The current clock digits to be displayed, either as integers or symbols.
         """
+        # Flag to indicate if the screen needs to be refreshed after drawing
+        update_the_screen = False
 
-        # Initialize starting position for drawing
-        last_column_position = self.top_left_x
+        # Iterate over each clock digit position to determine changes and update display
+        for idx in range(self.__clock_digits_qty):
+            # Only process the digit if it has changed from the previous state
+            if time_components[idx] != self.__digit_buffer[idx]:
 
-        # Iterate through each symbol slice to draw on screen
-        for symbol_slice in symbols:
-            current_line_position = self.top_left_y
+                # Indicate a element has changed
+                update_the_screen = True
 
-            # Iterate over the height of the symbol representation
-            for row in range(SHAPE_HEIGHT):
-                column_position = last_column_position
+                # Convert the time component to its corresponding symbol representation
+                symbols: list[str] = map_to_symbol(element=time_components[idx])
 
-                # Iterate over the width of the symbol representation
-                for col in range(SHAPE_WIDTH):
-                    pixel_value = symbol_slice.pop(0)  # Get next pixel value
+                # Store the updated digit in the buffer for future comparison
+                self.__digit_buffer[idx] = time_components[idx]
 
-                    # Draw tiles based on pixel value and dimensions specified by user settings
-                    for tile_row in range(self.tiles_per_pixel_height):
-                        for tile_col in range(self.tiles_per_pixel_width):
-                            self.__draw_pixel(
-                                pixel=pixel_value,
-                                x=(column_position + tile_col),
-                                y=(current_line_position + tile_row),
-                            )
+                # Retrieve the starting position for the current digit
+                current_line_position = self.__top_corners[f"dig{idx}_y"]
 
-                    column_position += self.tiles_per_pixel_width
+                # Draw each row in the symbol representation's height
+                for row in range(SHAPE_HEIGHT):
+                    column_position = self.__top_corners[f"dig{idx}_x"]
 
-                current_line_position += self.tiles_per_pixel_height
+                    # Draw each column in the symbol representation's width
+                    for col in range(SHAPE_WIDTH):
+                        pixel_value = symbols.pop(0)
+                        # Render tiles for each pixel value, scaled by user-defined tile dimensions
+                        for tile_row in range(self.tiles_per_pixel_height):
+                            for tile_col in range(self.tiles_per_pixel_width):
+                                self.__draw_pixel(
+                                    pixel=pixel_value,
+                                    x=(column_position + tile_col),
+                                    y=(current_line_position + tile_row),
+                                )
 
-            last_column_position += (
-                SHAPE_WIDTH * self.tiles_per_pixel_width
-                + self.tiles_per_pixel_width  # Space between symbols
-            )
+                        # Move to the next column position by the width of a tile
+                        column_position += self.tiles_per_pixel_width
 
-        self.stdscr.refresh()  # Refresh display to show drawn pixels
+                    # Move to the next row position by the height of a tile
+                    current_line_position += self.tiles_per_pixel_height
+
+        # Refresh the screen if any changes were drawn
+        if update_the_screen:
+            self.stdscr.refresh()
 
     def __calculate_center_xy_position(self) -> None:
         """Calculate and adjust top-left position to center the clock on screen."""
-
-        clock_digits_count = (
-            5 + (3 if self.show_seconds else 0) + (3 if not self.military_time else 0)
-        )
 
         # Calculate dimensions needed for centering based on shape sizes and user settings
         pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
         pixel_width = SHAPE_WIDTH * self.tiles_per_pixel_width
 
         total_length_with_spaces = (
-            clock_digits_count * pixel_width
-            + (clock_digits_count - 1) * self.tiles_per_pixel_width
+            self.__clock_digits_qty * pixel_width
+            + (self.__clock_digits_qty - 1) * self.tiles_per_pixel_width
         )
 
         # Centering calculations based on available screen dimensions
         self.top_left_y = round((self.__screen_height - pixel_height) / 2)
         self.top_left_x = round((self.__screen_width - total_length_with_spaces) / 2)
+
+    def __calculate_top_corners_position(self) -> None:
+        """"""
+
+        last_x = self.top_left_x
+
+        for i in range(self.__clock_digits_qty):
+
+            self.__top_corners[f"dig{i}_x"] = last_x
+            self.__top_corners[f"dig{i}_y"] = self.top_left_y
+
+            last_x += (
+                SHAPE_WIDTH * self.tiles_per_pixel_width
+                + self.tiles_per_pixel_width  # Space between symbols
+            )
 
     def __check_fit(self) -> bool:
         """Check if the clock fits within available screen space.
@@ -194,15 +221,11 @@ class ViewConnector:
         if (self.__screen_height - self.top_left_y) < pixel_height:
             return False
 
-        clock_digits_count = (
-            5 + (3 if self.show_seconds else 0) + (3 if not self.military_time else 0)
-        )
-
         pixel_width = SHAPE_WIDTH * self.tiles_per_pixel_width
 
         total_length_with_spaces = (
-            clock_digits_count * pixel_width
-            + (clock_digits_count - 1) * self.tiles_per_pixel_width
+            self.__clock_digits_qty * pixel_width
+            + (self.__clock_digits_qty - 1) * self.tiles_per_pixel_width
         )
 
         return (
@@ -222,6 +245,8 @@ class ViewConnector:
 
         if not self.__check_fit():
             sys.exit(1)  # Exit if clock does not fit in resized window
+
+        self.__calculate_top_corners_position()
 
         self.stdscr.clear()
         # Clear previous content and reset buffer
@@ -275,10 +300,8 @@ class ViewConnector:
             military_time=self.military_time,
         )
 
-        symbol_mappings: list[list[str]] = map_to_symbols(time_components)
-
         # Interpolate symbols into pixels for display
-        self.__interpolate(symbols=symbol_mappings)
+        self.__interpolate(time_components=time_components)
 
     def run(self) -> None:
         """Run the curses application within a wrapper."""
@@ -335,32 +358,31 @@ def datetime_slicer(
     return output_list
 
 
-def map_to_symbols(elements: list[int | str]) -> list[list[str]]:
-    """Map time components to their binary string representations.
+def map_to_symbol(element: int | str) -> list[str]:
+    """
+    Convert a time component (either an integer or specific character) to its binary string representation.
 
     Args:
-        elements (list[int | str]): A list containing integers and strings representing time components.
+        element (int | str): An integer representing a digit (0-9) or a specific string character
+                             (e.g., ":", " ", "A", "P", "M") for mapping to binary symbols.
 
     Returns:
-        list[list[str]]: A nested list where each inner list represents a binary string of a time component.
+        list[str]: A list of strings representing the binary form of the given time component.
     """
+    # Check if the element is a character symbol and map accordingly
+    if isinstance(element, str):
+        # Map specific characters to their binary representations
+        ret = list(
+            {
+                ":": COLON,  # Map colon character
+                " ": SPACE,  # Map space character
+                "A": LETTER_A,  # Map letter "A"
+                "P": LETTER_P,  # Map letter "P"
+                "M": LETTER_M,  # Map letter "M"
+            }[element]
+        )
+    else:
+        # Map integer digits to their binary representations
+        ret = list(DIGIT[element])
 
-    pixel_buffer_output: list[list[str]] = []
-
-    for element in elements:
-        if isinstance(element, str):
-            pixel_buffer_output.append(
-                list(
-                    {
-                        ":": COLON,
-                        " ": SPACE,
-                        "A": LETTER_A,
-                        "P": LETTER_P,
-                        "M": LETTER_M,
-                    }[element]
-                )
-            )
-        else:
-            pixel_buffer_output.append(list(DIGIT[element]))
-
-    return pixel_buffer_output
+    return ret
