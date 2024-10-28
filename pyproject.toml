@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "python3-ptock"
-version = "1.2.0"
+version = "1.2.1"
 description = "A digital clock made in Python for the terminal, inspired by tty-clock and tock."
 authors = [{ name = "Andre Ribeiro", email = "andre.ribeiro.srs@gmail.com" }]
 license = { text = "MIT" }

@@ -1,13 +1,14 @@
 # Built-in libraries
 import curses
-from enum import Enum
-from zoneinfo import ZoneInfo
 import sys
 from datetime import datetime
+from enum import Enum
+from typing import Optional
+from zoneinfo import ZoneInfo
 
 # Custom-made libraries
-from .mechanism import Quartz
-from .font import (
+from mechanism import Quartz
+from font import (
     DIGIT,
     COLON,
     SHAPE_HEIGHT,
@@ -140,7 +141,7 @@ class ViewConnector:
             # Only process the digit if it has changed from the previous state
             if time_components[idx] != self.__digit_buffer[idx]:
 
-                # Indicate a element has changed
+                # Indicate an element has changed
                 update_the_screen = True
 
                 # Convert the time component to its corresponding symbol representation
@@ -195,12 +196,11 @@ class ViewConnector:
         self.top_left_x = round((self.__screen_width - total_length_with_spaces) / 2)
 
     def __calculate_top_corners_position(self) -> None:
-        """"""
+        """Set positions for each digit's top-left corner."""
 
         last_x = self.top_left_x
 
         for i in range(self.__clock_digits_qty):
-
             self.__top_corners[f"dig{i}_x"] = last_x
             self.__top_corners[f"dig{i}_y"] = self.top_left_y
 
@@ -267,15 +267,15 @@ class ViewConnector:
 
         try:
             while True:
-                key = self.stdscr.getch()
+                # key = self.stdscr.getch()
 
                 # Handle terminal resize events
                 if curses.is_term_resized(self.__screen_height, self.__screen_width):
                     self.__handle_resize()
 
                 # Exit condition when 'q' or 'ESC' is pressed
-                if key == ord("q") or key == 27:  # 27 is the ASCII code for ESC
-                    break
+                # if key == ord("q") or key == 27:  # 27 is the ASCII code for ESC
+                #     break
 
         except KeyboardInterrupt:
             pass  # Gracefully handle Ctrl+C

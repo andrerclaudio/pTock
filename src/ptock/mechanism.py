@@ -1,10 +1,10 @@
 # Built-in libraries
-from datetime import datetime
-from zoneinfo import ZoneInfo
-import threading
 import sys
+import threading
+from datetime import datetime
 from time import sleep
 from typing import Optional, Callable
+from zoneinfo import ZoneInfo
 
 
 class Quartz(threading.Thread):

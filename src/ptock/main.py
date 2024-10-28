@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 
 # Built-in libraries
-import os
 import argparse
+import os
 import subprocess
 from random import randint
 from zoneinfo import ZoneInfo
 
 # Custom-made libraries
-from .view import ViewConnector
+from view import ViewConnector
 
 
 def get_system_timezone() -> str:
@@ -34,7 +34,7 @@ def get_system_timezone() -> str:
             if "Time zone" in line:
                 # Extract and return the timezone part of the line
                 return line.split(":")[1].strip().split(" ")[0]
-    except Exception as e:
+    except subprocess.SubprocessError as e:
         # Problem fetching the Timezone information
         pass
 
@@ -227,3 +227,7 @@ def main():
         military_time=args.military,
         center_clock=args.center,
     )
+
+
+if __name__ == "__main__":
+    main()

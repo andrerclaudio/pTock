@@ -39,15 +39,16 @@ Usage: ptock [OPTIONS]
 A digital clock for the terminal.
 
 Options:
-  -h, --help             show this help message and exit
-  -x, --x <X>            Horizontal 0-indexed position of top-left corner [default: 0]
-  -y, --y <Y>            Vertical 0-indexed position of top-left corner [default: 0]
-  -W, --width <WIDTH>    Font width in characters per tile [default: 2]
-  -H, --height <HEIGHT>  Font height in characters per tile [default: 1]
-  -s, --second           Display seconds
-  -m, --military         Display military (24-hour) time
-  -c, --center           Center the clock in the terminal. Overrides manual positioning
+  -h, --help             show this help message and exit.
+  -x, --x <X>            Horizontal 0-indexed position of top-left corner [default: 0].
+  -y, --y <Y>            Vertical 0-indexed position of top-left corner [default: 0].
+  -W, --width <WIDTH>    Font width in characters per tile [default: 2].
+  -H, --height <HEIGHT>  Font height in characters per tile [default: 1].
+  -s, --second           Display seconds.
+  -m, --military         Display military (24-hour) time.
+  -c, --center           Center the clock in the terminal. Overrides manual positioning.
   -C, --color <COLOR>    Change the color of the time [If none is given, random from 1 to 7].
+  -v, --version          Show program's version number and exit.
 ```
 
 Available commands with this feature flag set are:
