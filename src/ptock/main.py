@@ -205,6 +205,14 @@ def main():
         "1-red, 2-green, 3-yellow, 4-blue, 5-magenta, 6-cyan, 7-white and 0-black",
     )
 
+    parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version="ptock: v1.2.0",
+        help="Show program's version number and exit",
+    )
+
     # Parse command-line arguments
     args = parser.parse_args()
 
