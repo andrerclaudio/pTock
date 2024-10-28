@@ -9,7 +9,7 @@ from random import randint
 from zoneinfo import ZoneInfo
 
 # Custom-made libraries
-from view import ViewConnector
+from .view import ViewConnector
 
 
 def get_system_timezone() -> str:
@@ -209,7 +209,7 @@ def main():
         "-v",
         "--version",
         action="version",
-        version="ptock: v1.2.1",
+        version="ptock: v1.2.2",
         help="Show program's version number and exit",
     )
 

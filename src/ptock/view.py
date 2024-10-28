@@ -7,8 +7,8 @@ from typing import Optional
 from zoneinfo import ZoneInfo
 
 # Custom-made libraries
-from mechanism import Quartz
-from font import (
+from .mechanism import Quartz
+from .font import (
     DIGIT,
     COLON,
     SHAPE_HEIGHT,
