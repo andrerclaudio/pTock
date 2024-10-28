@@ -209,7 +209,7 @@ def main():
         "-v",
         "--version",
         action="version",
-        version="ptock: v1.2.0",
+        version="ptock: v1.2.1",
         help="Show program's version number and exit",
     )
 
@@ -227,7 +227,3 @@ def main():
         military_time=args.military,
         center_clock=args.center,
     )
-
-
-if __name__ == "__main__":
-    main()

@@ -86,8 +86,9 @@ class ViewConnector:
         self.__screen_height: int = 0
         self.__screen_width: int = 0
         self.__pixel_buffer: dict = {}
-        self.__digit_buffer: list = [" " for i in range(self.__clock_digits_qty)]
+        self.__digit_buffer: list = []
         self.__top_corners: dict = {}
+        self.slices: list[int | str] = []
 
     def __draw_pixel(self, pixel: str, x: int, y: int) -> None:
         """Draw a pixel at specified coordinates.
@@ -175,7 +176,7 @@ class ViewConnector:
                     # Move to the next row position by the height of a tile
                     current_line_position += self.tiles_per_pixel_height
 
-        # Refresh the screen if any changes were drawn
+        # Refresh the screen if any changes were drawnt
         if update_the_screen:
             self.stdscr.refresh()
 
@@ -251,6 +252,8 @@ class ViewConnector:
         self.stdscr.clear()
         # Clear previous content and reset buffer
         self.__pixel_buffer.clear()
+        # Pre-load the list with correct
+        self.__digit_buffer: list = [" " for i in range(self.__clock_digits_qty)]
 
     def __application(self, stdscr: curses.window) -> None:
         """Main application logic that runs within curses environment."""
@@ -267,15 +270,18 @@ class ViewConnector:
 
         try:
             while True:
-                # key = self.stdscr.getch()
+                key = self.stdscr.getch()
 
                 # Handle terminal resize events
                 if curses.is_term_resized(self.__screen_height, self.__screen_width):
                     self.__handle_resize()
+                    # Force a new interpolation to update the Display information with the last
+                    # time information
+                    self.__interpolate(time_components=self.slices)
 
                 # Exit condition when 'q' or 'ESC' is pressed
-                # if key == ord("q") or key == 27:  # 27 is the ASCII code for ESC
-                #     break
+                if key == ord("q") or key == 27:  # 27 is the ASCII code for ESC
+                    break
 
         except KeyboardInterrupt:
             pass  # Gracefully handle Ctrl+C
@@ -294,14 +300,14 @@ class ViewConnector:
             current_time (datetime): The current time to be displayed on screen.
         """
 
-        time_components: list[int | str] = datetime_slicer(
+        self.slices: list[int | str] = datetime_slicer(
             now=current_time,
             show_seconds=self.show_seconds,
             military_time=self.military_time,
         )
 
         # Interpolate symbols into pixels for display
-        self.__interpolate(time_components=time_components)
+        self.__interpolate(time_components=self.slices)
 
     def run(self) -> None:
         """Run the curses application within a wrapper."""
