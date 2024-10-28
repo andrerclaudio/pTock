@@ -209,7 +209,7 @@ def main():
         "-v",
         "--version",
         action="version",
-        version="ptock: v1.2.2",
+        version="ptock: v1.2.3",
         help="Show program's version number and exit",
     )
 
