@@ -12,6 +12,22 @@ from zoneinfo import ZoneInfo
 from .view import ViewConnector
 
 
+# Non-negative integer validation
+def non_negative_int_check(value):
+    ivalue = int(value)
+    if ivalue < 0:
+        raise argparse.ArgumentTypeError(f"{value} must be 0 or a positive integer")
+    return ivalue
+
+
+# Color range validation
+def color_range_check(value):
+    ivalue = int(value)
+    if ivalue < 0 or ivalue > 7:
+        raise argparse.ArgumentTypeError(f"{value} must be an integer between 0 and 7")
+    return ivalue
+
+
 def get_system_timezone() -> str:
     """
     Retrieves the system's current timezone using the 'timedatectl' command.
@@ -34,8 +50,8 @@ def get_system_timezone() -> str:
             if "Time zone" in line:
                 # Extract and return the timezone part of the line
                 return line.split(":")[1].strip().split(" ")[0]
-    except subprocess.SubprocessError as e:
-        # Problem fetching the Timezone information
+    except Exception as e:
+        # Problem fetching the Timezone information. Continue without it.
         pass
 
     # Return 'UTC' as a fallback in case of an error
@@ -154,7 +170,7 @@ def main():
     parser.add_argument(
         "-x",
         "--x",
-        type=int,
+        type=non_negative_int_check,
         default=0,
         help="Horizontal 0-indexed position of top-left corner [default: 0]",
     )
@@ -162,7 +178,7 @@ def main():
     parser.add_argument(
         "-y",
         "--y",
-        type=int,
+        type=non_negative_int_check,
         default=0,
         help="Vertical 0-indexed position of top-left corner [default: 0]",
     )
@@ -199,7 +215,7 @@ def main():
     parser.add_argument(
         "-C",
         "--color",
-        type=int,
+        type=color_range_check,
         required=False,
         help="Change the color of the time [not required]. The options are: "
         "1-red, 2-green, 3-yellow, 4-blue, 5-magenta, 6-cyan, 7-white and 0-black",
@@ -209,7 +225,7 @@ def main():
         "-v",
         "--version",
         action="version",
-        version="ptock: v1.2.3",
+        version="ptock: v1.3.1",
         help="Show program's version number and exit",
     )
 

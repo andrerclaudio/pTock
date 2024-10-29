@@ -88,7 +88,7 @@ class ViewConnector:
         self.__pixel_buffer: dict = {}
         self.__digit_buffer: list = []
         self.__top_corners: dict = {}
-        self.slices: list[int | str] = []
+        self.__slices: list[int | str] = []
 
     def __draw_pixel(self, pixel: str, x: int, y: int) -> None:
         """Draw a pixel at specified coordinates.
@@ -217,23 +217,53 @@ class ViewConnector:
             bool: True if it fits, False otherwise.
         """
 
-        pixel_height = SHAPE_HEIGHT * self.tiles_per_pixel_height
+        initial_height = self.tiles_per_pixel_height
 
-        if (self.__screen_height - self.top_left_y) < pixel_height:
-            return False
+        for height in range(initial_height, 0, -1):
 
-        pixel_width = SHAPE_WIDTH * self.tiles_per_pixel_width
+            if self.align_to_center:
+                self.__calculate_center_xy_position()
 
-        total_length_with_spaces = (
-            self.__clock_digits_qty * pixel_width
-            + (self.__clock_digits_qty - 1) * self.tiles_per_pixel_width
-        )
+            pixel_height = SHAPE_HEIGHT * height
 
-        return (
-            True
-            if (self.__screen_width - self.top_left_x) >= total_length_with_spaces
-            else False
-        )
+            if pixel_height > (self.__screen_height - self.top_left_y):
+
+                # Update the global value
+                self.tiles_per_pixel_height -= 1
+
+                if height == 1:
+                    # It wasn't possible to fit the screen size height
+                    # even with height 1
+                    return False
+            else:
+                break
+
+        initial_width = self.tiles_per_pixel_width
+
+        for width in range(initial_width, 0, -1):
+
+            if self.align_to_center:
+                self.__calculate_center_xy_position()
+
+            pixel_width = SHAPE_WIDTH * width
+
+            total_length_with_spaces = (
+                self.__clock_digits_qty * pixel_width
+                + (self.__clock_digits_qty - 1) * width
+            )
+
+            if total_length_with_spaces > (self.__screen_width - self.top_left_x):
+
+                # Update the global value
+                self.tiles_per_pixel_width -= 1
+
+                if width == 1:
+                    # It wasn't possible to fit the screen size width
+                    # even with height 1
+                    return False
+
+            else:
+                return True
 
     def __handle_resize(self):
         """Handle terminal resizing events and adjust content accordingly."""
@@ -241,18 +271,18 @@ class ViewConnector:
         # Update screen dimensions based on current window size
         self.__screen_height, self.__screen_width = self.stdscr.getmaxyx()
 
-        if self.align_to_center:
-            self.__calculate_center_xy_position()
+        # if self.align_to_center:
+        #     self.__calculate_center_xy_position()
 
         if not self.__check_fit():
-            sys.exit(1)  # Exit if clock does not fit in resized window
+            sys.exit(1)  # Exit if clock does not fit in the window
 
         self.__calculate_top_corners_position()
 
         self.stdscr.clear()
         # Clear previous content and reset buffer
         self.__pixel_buffer.clear()
-        # Pre-load the list with correct
+        # Pre-load the list with correct quantity of slots
         self.__digit_buffer: list = [" " for i in range(self.__clock_digits_qty)]
 
     def __application(self, stdscr: curses.window) -> None:
@@ -277,7 +307,7 @@ class ViewConnector:
                     self.__handle_resize()
                     # Force a new interpolation to update the Display information with the last
                     # time information
-                    self.__interpolate(time_components=self.slices)
+                    self.__interpolate(time_components=self.__slices)
 
                 # Exit condition when 'q' or 'ESC' is pressed
                 if key == ord("q") or key == 27:  # 27 is the ASCII code for ESC
@@ -300,14 +330,14 @@ class ViewConnector:
             current_time (datetime): The current time to be displayed on screen.
         """
 
-        self.slices: list[int | str] = datetime_slicer(
+        self.__slices: list[int | str] = datetime_slicer(
             now=current_time,
             show_seconds=self.show_seconds,
             military_time=self.military_time,
         )
 
         # Interpolate symbols into pixels for display
-        self.__interpolate(time_components=self.slices)
+        self.__interpolate(time_components=self.__slices)
 
     def run(self) -> None:
         """Run the curses application within a wrapper."""
